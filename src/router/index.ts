@@ -1,9 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import LoginPage from '/src/pages/LoginPage.vue'
-
-const DashboardPage = {
-  template: '<h1 style="padding: 40px; font-size: 32px;">Dashboard NutriPro</h1>',
-}
+import DashboardPage from '/src/pages/DashboardPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),

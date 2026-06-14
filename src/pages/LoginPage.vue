@@ -201,6 +201,8 @@ import { useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 
 const router = useRouter()
+import { useAuthStore } from '@/stores/auth.store'
+const auth = useAuthStore()
 
 const mounted = ref(false)
 const isLoading = ref(false)
@@ -273,6 +275,7 @@ async function handleLogin() {
       throw new Error('No se pudo iniciar sesión.')
     }
 
+    await auth.loadUser()
     loginSuccess.value = true
 
     setTimeout(() => {
@@ -624,7 +627,7 @@ function goToRegister() {
   width: 100%;
   padding: 15px;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 500;
   color: #fff;
   background-color: #8E73A8;
   border: none;
