@@ -95,7 +95,7 @@
   v-for="(patient, i) in paginatedPatients"
   :key="patient.id"
   class="patient-row"
-  :style="{ '--delay': `${i * 40}ms` }"
+  :style="{ '--delay': `${i * 20}ms` }"
   @click="goToPatientDetail(patient.id)"
 >
               <!-- Nombre + avatar -->
@@ -143,7 +143,7 @@
               <!-- Acción -->
               <td class="td td-action" @click.stop>
                 <div class="row-actions">
-                  <button class="action-btn" @click="openModal('detail', patient)" title="Ver detalle">
+                  <button class="action-btn" @click="goToPatientDetail(patient.id)" title="Ver detalle">
                     <Eye :size="15" />
                   </button>
                   <button class="action-btn" @click="openModal('edit', patient)" title="Editar">
@@ -222,44 +222,10 @@
             </div>
 
             <!-- ── DETALLE ── -->
-            <div v-if="modal.mode === 'detail' && modal.patient" class="modal-body">
-              <div class="detail-avatar" :style="{ background: modal.patient.color }">
-                {{ modal.patient.initials }}
-              </div>
-              <div class="detail-grid">
-                <div class="detail-item">
-                  <span class="detail-label">Peso actual</span>
-                  <span class="detail-value">{{ modal.patient.currentWeight }} kg</span>
-                </div>
-                <div class="detail-item">
-                  <span class="detail-label">Peso meta</span>
-                  <span class="detail-value">{{ modal.patient.goalWeight }} kg</span>
-                </div>
-                <div class="detail-item">
-                  <span class="detail-label">Diferencia</span>
-                  <span class="detail-value diff" :class="modal.patient.diff < 0 ? 'neg' : 'pos'">
-                    {{ modal.patient.diff > 0 ? '+' : '' }}{{ modal.patient.diff }} kg
-                  </span>
-                </div>
-                <div class="detail-item">
-                  <span class="detail-label">Última cita</span>
-                  <span class="detail-value">{{ formatDate(modal.patient.lastAppointment) }}</span>
-                </div>
-                <div class="detail-item">
-                  <span class="detail-label">Estado</span>
-                  <span class="status-badge" :class="modal.patient.status.toLowerCase()">{{ modal.patient.status }}</span>
-                </div>
-              </div>
-              <div class="modal-footer">
-                <button class="btn-secondary" @click="closeModal">Cerrar</button>
-                <button class="btn-primary" @click="openModal('edit', modal.patient)">
-                  <Pencil :size="15" /> Editar
-                </button>
-              </div>
-            </div>
+            
 
             <!-- ── FORMULARIO Crear / Editar ── -->
-            <div v-else class="modal-body">
+            <div v-if="modal.mode === 'create' || modal.mode === 'edit'" class="modal-body">
               <form @submit.prevent="savePatient" novalidate>
                 <div class="form-grid">
   <div class="form-field full">
@@ -290,7 +256,19 @@
       <option value="M">Masculino</option>
     </select>
   </div>
-
+  <div class="form-field">
+  <label>Altura (cm)</label>
+  <input
+    v-model.number="form.heightCm"
+    type="number"
+    step="0.1"
+    placeholder="165"
+    :class="{ err: formErrors.heightCm }"
+  />
+  <span v-if="formErrors.heightCm" class="field-err">
+    {{ formErrors.heightCm }}
+  </span>
+</div>
   <div class="form-field">
     <label>Celular</label>
     <input
@@ -469,8 +447,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
   Plus,
   Search,
@@ -518,6 +496,7 @@ interface PatientRow {
   user_id: string
   full_name: string
   birth_date: string | null
+  height_cm: number | null
   current_weight: number | null
   goal_weight: number | null
   sex: string | null
@@ -543,6 +522,7 @@ interface Patient {
   color: string
   age: number
   birthDate: string | null
+  heightCm: number | null
   sex: 'F' | 'M'
   phone: string | null
 
@@ -568,6 +548,7 @@ interface Patient {
 }
 
 /* ── Store ───────────────────────────────────────────────── */
+const route = useRoute()
 const router = useRouter()
 
 function goToPatientDetail(patientId: string) {
@@ -663,6 +644,7 @@ function mapPatient(row: PatientRow, index: number): Patient {
     color: makeColor(index),
     age: calculateAge(row.birth_date),
     birthDate: row.birth_date,
+    heightCm: row.height_cm,
     sex: row.sex === 'male' ? 'M' : 'F',
     phone: row.phone,
 
@@ -793,7 +775,7 @@ const form = reactive({
   birthDate: '',
   sex: 'F' as 'F' | 'M',
   phone: '',
-
+  heightCm: null as number | null,
   currentWeight: null as number | null,
   goalWeight: null as number | null,
 
@@ -818,6 +800,7 @@ const formErrors = reactive({
   birthDate: '',
   currentWeight: '',
   goalWeight: '',
+  heightCm: '',
 })
 
 function openModal(mode: 'create' | 'edit' | 'detail', patient?: Patient) {
@@ -833,6 +816,7 @@ function openModal(mode: 'create' | 'edit' | 'detail', patient?: Patient) {
     form.sex = patient.sex
     form.phone = patient.phone ?? ''
 
+    form.heightCm = patient.heightCm
     form.currentWeight = patient.currentWeight
     form.goalWeight = patient.goalWeight
 
@@ -857,6 +841,7 @@ function openModal(mode: 'create' | 'edit' | 'detail', patient?: Patient) {
       sex: 'F',
       phone: '',
 
+      heightCm: null,
       currentWeight: null,
       goalWeight: null,
 
@@ -876,6 +861,20 @@ function openModal(mode: 'create' | 'edit' | 'detail', patient?: Patient) {
       status: 'Active',
     })
   }
+}
+
+function openEditFromQuery() {
+  const editId = route.query.edit
+
+  if (!editId || typeof editId !== 'string') return
+
+  const patientToEdit = patients.value.find((patient) => patient.id === editId)
+
+  if (!patientToEdit) return
+
+  openModal('edit', patientToEdit)
+
+  router.replace('/patients')
 }
 
 function closeModal() {
@@ -905,6 +904,10 @@ function validateForm() {
     formErrors.birthDate = 'La fecha de nacimiento es requerida.'
     ok = false
   }
+  if (!form.heightCm || form.heightCm < 50) {
+  formErrors.heightCm = 'Ingresa una altura válida.'
+  ok = false
+}
 
   if (!form.currentWeight || form.currentWeight < 1) {
     formErrors.currentWeight = 'Ingresa el peso actual.'
@@ -937,6 +940,7 @@ const payload = {
   sex: form.sex === 'F' ? 'female' : 'male',
   phone: form.phone.trim() || null,
 
+  height_cm: form.heightCm,
   current_weight: form.currentWeight,
   goal_weight: form.goalWeight,
 
@@ -1018,7 +1022,16 @@ onMounted(async () => {
   }, 80)
 
   await loadPatients()
+  openEditFromQuery()
 })
+
+watch(
+  () => route.query.edit,
+  () => {
+    openEditFromQuery()
+  },
+)
+
 </script>
 
 <style scoped>
@@ -1076,6 +1089,9 @@ onMounted(async () => {
   opacity: 0;
   transform: translateY(-8px);
   transition: opacity .5s ease .1s, transform .5s ease .1s;
+
+  position: relative;
+  z-index: 100;
 }
 .toolbar.visible { opacity: 1; transform: translateY(0); }
 
@@ -1119,7 +1135,10 @@ onMounted(async () => {
 .clear-search:hover { color: #374151; }
 
 /* Filter btn */
-.filter-group { position: relative; }
+.filter-group {
+  position: relative;
+  z-index: 200;
+}
 
 .filter-btn {
   display: flex;

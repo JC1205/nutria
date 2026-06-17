@@ -102,56 +102,46 @@
 
             <!-- Estilo de vida -->
             <div class="card">
-              <h2 class="card-title">Estilo de vida</h2>
-              <div class="lifestyle-grid">
-                <div class="lifestyle-item">
-                  <div class="ls-icon" style="background:#eff6ff">💧</div>
-                  <div>
-                    <span class="ls-label">Consumo de agua</span>
-                    <span class="ls-value">{{ patient.waterIntake }} L / día</span>
-                  </div>
-                </div>
-                <div class="lifestyle-item">
-                  <div class="ls-icon" style="background:#fdf4ff">🍽️</div>
-                  <div>
-                    <span class="ls-label">Comidas al día</span>
-                    <span class="ls-value">{{ patient.mealsPerDay }} comidas</span>
-                  </div>
-                </div>
-                <div class="lifestyle-item">
-                  <div class="ls-icon" style="background:#f0fdf4">🏋️</div>
-                  <div>
-                    <span class="ls-label">Tipo de ejercicio</span>
-                    <span class="ls-value">{{ patient.exerciseType }}</span>
-                  </div>
-                </div>
-                <div class="lifestyle-item">
-                  <div class="ls-icon" style="background:#fff7ed">⚡</div>
-                  <div>
-                    <span class="ls-label">Intensidad</span>
-                    <span class="ls-value">
-                      <span class="intensity-badge" :class="patient.exerciseIntensity.toLowerCase()">
-                        {{ patient.exerciseIntensity }}
-                      </span>
-                    </span>
-                  </div>
-                </div>
-                <div class="lifestyle-item">
-                  <div class="ls-icon" style="background:#fef2f2">⏱️</div>
-                  <div>
-                    <span class="ls-label">Duración por sesión</span>
-                    <span class="ls-value">{{ patient.exerciseHours }} h / sesión</span>
-                  </div>
-                </div>
-                <div class="lifestyle-item">
-                  <div class="ls-icon" style="background:#f0f9ff">📅</div>
-                  <div>
-                    <span class="ls-label">Días por semana</span>
-                    <span class="ls-value">{{ patient.exerciseDays }} días / semana</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+  <h2 class="card-title">Estilo de vida</h2>
+
+  <div class="lifestyle-grid">
+    <div class="lifestyle-item">
+      <div class="ls-icon" style="background:#f0fdf4">🏋️</div>
+      <div>
+        <span class="ls-label">Tipo de ejercicio</span>
+        <span class="ls-value">{{ patient.exerciseType }}</span>
+      </div>
+    </div>
+
+    <div class="lifestyle-item">
+      <div class="ls-icon" style="background:#fff7ed">⚡</div>
+      <div>
+        <span class="ls-label">Intensidad</span>
+        <span class="ls-value">
+          <span class="intensity-badge" :class="patient.exerciseIntensity.toLowerCase()">
+            {{ patient.exerciseIntensity }}
+          </span>
+        </span>
+      </div>
+    </div>
+
+    <div class="lifestyle-item">
+      <div class="ls-icon" style="background:#fef2f2">⏱️</div>
+      <div>
+        <span class="ls-label">Duración por sesión</span>
+        <span class="ls-value">{{ patient.exerciseHours }} h / sesión</span>
+      </div>
+    </div>
+
+    <div class="lifestyle-item">
+      <div class="ls-icon" style="background:#f0f9ff">📅</div>
+      <div>
+        <span class="ls-label">Días por semana</span>
+        <span class="ls-value">{{ patient.exerciseDays }} días / semana</span>
+      </div>
+    </div>
+  </div>
+</div>
 
             <!-- Alergias -->
             <div class="card">
@@ -169,7 +159,7 @@
               <h2 class="card-title">Alimentos no preferidos</h2>
               <div v-if="patient.dislikes.length" class="tag-list">
                 <span v-for="d in patient.dislikes" :key="d" class="tag tag-gray">
-                  😣 {{ d }}
+                   {{ d }}
                 </span>
               </div>
               <p v-else class="empty-tag">Sin registros</p>
@@ -402,12 +392,134 @@
       </div>
 
     </div><!-- /tab-content -->
+<Transition name="modal-fade">
+  <div v-if="editModalOpen" class="modal-overlay" @click.self="editModalOpen = false">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title">Editar paciente</h2>
+          <p class="modal-sub">Actualiza la información del paciente</p>
+        </div>
 
+        <button class="modal-close" @click="editModalOpen = false">×</button>
+      </div>
+
+      <div class="modal-body">
+        <form @submit.prevent="saveEditPatient">
+          <div class="form-grid">
+            <div class="form-field full">
+              <label>Nombre completo</label>
+              <input v-model="editForm.name" type="text" />
+            </div>
+
+            <div class="form-field">
+              <label>Fecha de nacimiento</label>
+              <input v-model="editForm.birthDate" type="date" />
+            </div>
+
+            <div class="form-field">
+              <label>Sexo</label>
+              <select v-model="editForm.sex">
+                <option value="F">Femenino</option>
+                <option value="M">Masculino</option>
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label>Teléfono</label>
+              <input v-model="editForm.phone" type="tel" />
+            </div>
+
+            <div class="form-field">
+              <label>Altura (cm)</label>
+              <input v-model.number="editForm.heightCm" type="number" step="0.1" />
+            </div>
+
+            <div class="form-field">
+              <label>Peso actual (kg)</label>
+              <input v-model.number="editForm.currentWeight" type="number" step="0.1" />
+            </div>
+
+            <div class="form-field">
+              <label>Peso meta (kg)</label>
+              <input v-model.number="editForm.goalWeight" type="number" step="0.1" />
+            </div>
+
+            <div class="form-field">
+              <label>Calorías diarias</label>
+              <input v-model.number="editForm.dailyCalories" type="number" />
+            </div>
+
+            <div class="form-field">
+              <label>Calorías objetivo</label>
+              <input v-model.number="editForm.targetCalories" type="number" />
+            </div>
+
+            <div class="form-field full">
+              <label>Alergias</label>
+              <textarea v-model="editForm.allergies" rows="2"></textarea>
+            </div>
+
+            <div class="form-field full">
+              <label>Enfermedades</label>
+              <textarea v-model="editForm.diseases" rows="2"></textarea>
+            </div>
+
+            <div class="form-field full">
+              <label>Suplementos</label>
+              <textarea v-model="editForm.supplements" rows="2"></textarea>
+            </div>
+
+            <div class="form-field full">
+              <label>Alimentos que no le gustan</label>
+              <textarea v-model="editForm.dislikedFoods" rows="2"></textarea>
+            </div>
+
+            <div class="form-field">
+              <label>Tipo de ejercicio</label>
+              <input v-model="editForm.exerciseType" type="text" />
+            </div>
+
+            <div class="form-field">
+              <label>Intensidad</label>
+              <select v-model="editForm.exerciseIntensity">
+                <option value="">Sin registrar</option>
+                <option value="Baja">Baja</option>
+                <option value="Moderada">Moderada</option>
+                <option value="Alta">Alta</option>
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label>Horas por sesión</label>
+              <input v-model.number="editForm.exerciseHours" type="number" step="0.1" />
+            </div>
+
+            <div class="form-field">
+              <label>Días por semana</label>
+              <input v-model.number="editForm.exerciseDays" type="number" min="0" max="7" />
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-secondary" @click="editModalOpen = false">
+              Cancelar
+            </button>
+
+            <button type="submit" class="btn-appt" :disabled="savingEdit">
+              {{ savingEdit ? 'Guardando...' : 'Guardar cambios' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</Transition>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   ArrowLeft,
@@ -433,6 +545,33 @@ const activeTab = ref('general')
 const loading = ref(false)
 const pageError = ref('')
 
+const editModalOpen = ref(false)
+const savingEdit = ref(false)
+
+const editForm = reactive({
+  name: '',
+  birthDate: '',
+  sex: 'F' as 'F' | 'M',
+  phone: '',
+
+  heightCm: null as number | null,
+  currentWeight: null as number | null,
+  goalWeight: null as number | null,
+
+  dailyCalories: null as number | null,
+  targetCalories: null as number | null,
+
+  allergies: '',
+  diseases: '',
+  supplements: '',
+  dislikedFoods: '',
+
+  exerciseType: '',
+  exerciseIntensity: '',
+  exerciseHours: null as number | null,
+  exerciseDays: null as number | null,
+})
+
 const tabs = [
   { key: 'general', label: 'Info. General', icon: User },
   { key: 'medical', label: 'Historial médico', icon: ClipboardList },
@@ -448,6 +587,7 @@ interface PatientView {
   initials: string
   color: string
   age: number
+  birthDate: string | null
   sex: 'F' | 'M'
   height: number
   currentWeight: number
@@ -514,8 +654,9 @@ const patient = ref<PatientView>({
   initials: '',
   color: '#8E73A8',
   age: 0,
+  birthDate: null,
   sex: 'F',
-  height: 165,
+  height: 0,
   currentWeight: 0,
   goalWeight: 0,
   phone: '',
@@ -657,10 +798,10 @@ async function loadPatient() {
     color: '#8E73A8',
     age: calculateAge(data.birth_date),
     sex: data.sex === 'male' ? 'M' : 'F',
-
+    birthDate: data.birth_date,
     // Por ahora tu tabla patients no tiene estatura.
     // Después podemos agregar height_cm a la base de datos.
-    height: 165,
+    height: Number(data.height_cm ?? 0),
 
     currentWeight,
     goalWeight,
@@ -795,7 +936,76 @@ function formatDate(iso: string) {
 }
 
 function openEditModal() {
-  router.push('/patients')
+  editModalOpen.value = true
+
+  editForm.name = patient.value.name
+  editForm.birthDate = patient.value.birthDate ?? ''
+  editForm.sex = patient.value.sex
+  editForm.phone = patient.value.phone === 'Sin registrar' ? '' : patient.value.phone
+
+  editForm.heightCm = patient.value.height
+  editForm.currentWeight = patient.value.currentWeight
+  editForm.goalWeight = patient.value.goalWeight
+
+  editForm.dailyCalories = patient.value.caloricGoal
+  editForm.targetCalories = patient.value.caloricGoal
+
+  editForm.exerciseType = patient.value.exerciseType === 'Sin registrar' ? '' : patient.value.exerciseType
+  editForm.exerciseIntensity = patient.value.exerciseIntensity
+  editForm.exerciseHours = patient.value.exerciseHours
+  editForm.exerciseDays = patient.value.exerciseDays
+
+  editForm.allergies = patient.value.allergies.join(', ')
+  editForm.dislikedFoods = patient.value.dislikes.join(', ')
+  editForm.diseases = patient.value.conditions.map((c) => c.name).join(', ')
+  editForm.supplements = patient.value.supplements.map((s) => s.name).join(', ')
+}
+
+async function saveEditPatient() {
+  if (!auth.user) return
+
+  savingEdit.value = true
+  pageError.value = ''
+
+  const payload = {
+    full_name: editForm.name.trim(),
+    birth_date: editForm.birthDate || null,
+    sex: editForm.sex === 'F' ? 'female' : 'male',
+    phone: editForm.phone.trim() || null,
+
+    height_cm: editForm.heightCm,
+    current_weight: editForm.currentWeight,
+    goal_weight: editForm.goalWeight,
+
+    daily_calories: editForm.dailyCalories,
+    target_calories: editForm.targetCalories,
+
+    allergies: editForm.allergies.trim() || null,
+    diseases: editForm.diseases.trim() || null,
+    supplements: editForm.supplements.trim() || null,
+    disliked_foods: editForm.dislikedFoods.trim() || null,
+
+    exercise_type: editForm.exerciseType.trim() || null,
+    exercise_intensity: editForm.exerciseIntensity || null,
+    exercise_hours: editForm.exerciseHours,
+    exercise_days: editForm.exerciseDays,
+  }
+
+  const { error } = await supabase
+    .from('patients')
+    .update(payload)
+    .eq('id', patient.value.id)
+    .eq('user_id', auth.user.id)
+
+  savingEdit.value = false
+
+  if (error) {
+    pageError.value = error.message
+    return
+  }
+
+  editModalOpen.value = false
+  await loadPatient()
 }
 
 onMounted(async () => {
@@ -869,6 +1079,9 @@ onMounted(async () => {
   font-weight: 600;
   color: #0f1923;
   letter-spacing: -.4px;
+  margin-bottom: 0;
+  margin-top: 0;
+  padding-bottom: 9px;
 }
 
 .hero-meta {
@@ -1357,5 +1570,153 @@ onMounted(async () => {
   .hero-name { font-size: 1.4rem; }
   .tabs-bar { gap: 0; }
   .tab-btn { padding: 10px 12px; font-size: .78rem; }
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 25, 35, 0.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.modal-card {
+  background: #fff;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 760px;
+  max-height: 90vh;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  padding: 1.5rem 1.5rem 1rem;
+  border-bottom: 1px solid #f3f3f8;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.modal-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f1923;
+}
+
+.modal-sub {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 1.5rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-field.full {
+  grid-column: 1 / -1;
+}
+
+.form-field label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  padding: 10px 13px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  color: #0f1923;
+  background: #f9fafb;
+  outline: none;
+  font-family: inherit;
+}
+
+.form-field textarea {
+  resize: vertical;
+  min-height: 70px;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+  border-color: #8E73A8;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(142, 115, 168, 0.1);
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 1rem;
+  border-top: 1px solid #f3f3f8;
+  background: #fff;
+  position: sticky;
+  bottom: 0;
+}
+
+.btn-secondary {
+  padding: 10px 20px;
+  border: 1.5px solid #e5e7eb;
+  background: #fff;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+@media (max-width: 600px) {
+  .modal-overlay {
+    align-items: flex-start;
+    padding: 0.75rem;
+  }
+
+  .modal-card {
+    max-width: 100%;
+    max-height: 95vh;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

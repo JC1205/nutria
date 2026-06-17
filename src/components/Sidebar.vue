@@ -404,6 +404,7 @@ async function handleSignOut() {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-bottom: 0;
 }
 
 .user-role {
