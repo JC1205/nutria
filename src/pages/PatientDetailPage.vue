@@ -29,9 +29,9 @@
         <button class="btn-edit" @click="openEditModal">
           <Pencil :size="15" /> Editar
         </button>
-        <button class="btn-appt">
-          <CalendarPlus :size="15" /> Agendar cita
-        </button>
+        <button class="btn-appt" @click="goToNewAppointment">
+  <CalendarPlus :size="15" /> Agendar cita
+</button>
       </div>
     </div>
 
@@ -960,6 +960,16 @@ function openEditModal() {
   editForm.diseases = patient.value.conditions.map((c) => c.name).join(', ')
   editForm.supplements = patient.value.supplements.map((s) => s.name).join(', ')
 }
+
+function goToNewAppointment() {
+  router.push({
+    path: '/appointments',
+    query: {
+      patientId: patient.value.id,
+    },
+  })
+}
+
 
 async function saveEditPatient() {
   if (!auth.user) return
