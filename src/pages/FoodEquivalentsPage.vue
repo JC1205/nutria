@@ -114,40 +114,81 @@
             <tbody>
               <TransitionGroup name="row">
                 <tr
-                  v-for="(food, i) in paginatedFoods"
-                  :key="food.id"
-                  class="food-row"
-                  :style="{ '--delay': `${i * 30}ms` }"
-                >
+                    v-for="(food, i) in paginatedFoods"
+                    :key="food.id"
+                    class="food-row"
+                    :class="{ adjusted: food.portionMultiplier !== 1 }"
+                    :style="{ '--delay': `${i * 30}ms` }"
+                  >
                   <td class="td-sticky td-name">{{ food.name }}</td>
-                  <td>{{ food.quantity }}</td>
-                  <td class="td-unit">{{ food.unit }}</td>
-                  <td>{{ food.weightG }}</td>
-                  <td>
-                    <span class="kcal-badge">{{ food.energyKcal }} kcal</span>
-                  </td>
-                  <td>{{ food.proteinG }}</td>
-                  <td>{{ food.lipidsG }}</td>
-                  <td>{{ food.carbsG }}</td>
-                  <td>{{ food.satFatG }}</td>
-                  <td>{{ food.monoFatG }}</td>
-                  <td>{{ food.poliFatG }}</td>
-                  <td>{{ food.cholesterolMg }}</td>
-                  <td>{{ food.sugarG }}</td>
-                  <td>{{ food.fiberG }}</td>
-                  <td>{{ food.vitAMg }}</td>
-                  <td>{{ food.vitCMg }}</td>
-                  <td>{{ food.folicMg }}</td>
-                  <td>{{ food.calciumMg }}</td>
-                  <td>{{ food.ironMg }}</td>
-                  <td>{{ food.potassiumMg }}</td>
-                  <td>{{ food.sodiumMg }}</td>
-                  <td>{{ food.phosphorusMg }}</td>
-                  <td>
-                    <span class="gl-badge" :class="glClass(food.glycemicLoad)">{{ food.glycemicLoad }}</span>
-                  </td>
+
+<td class="td-portion">
+  <input
+    v-if="food.portionMultiplier !== 1"
+    v-model.number="food.portionMultiplier"
+    type="number"
+    min="0.1"
+    step="0.1"
+    class="portion-input"
+    @click.stop
+  />
+
+  <button
+    v-else
+    class="portion-value"
+    @dblclick.stop="food.portionMultiplier = 0.5"
+    title="Doble clic para ajustar porción"
+  >
+    {{ displayedQuantity(food) }}
+  </button>
+</td>
+
+<td class="td-unit">{{ food.unit }}</td>
+
+<td>{{ scaled(food.weightG, food.portionMultiplier) }}</td>
+
+<td>
+  <span class="kcal-badge">
+    {{ scaled(food.energyKcal, food.portionMultiplier) }} kcal
+  </span>
+</td>
+
+<td>{{ scaled(food.proteinG, food.portionMultiplier) }}</td>
+<td>{{ scaled(food.lipidsG, food.portionMultiplier) }}</td>
+<td>{{ scaled(food.carbsG, food.portionMultiplier) }}</td>
+<td>{{ scaled(food.satFatG, food.portionMultiplier) }}</td>
+<td>{{ scaled(food.monoFatG, food.portionMultiplier) }}</td>
+<td>{{ scaled(food.poliFatG, food.portionMultiplier) }}</td>
+<td>{{ scaled(food.cholesterolMg, food.portionMultiplier) }}</td>
+<td>{{ scaled(food.sugarG, food.portionMultiplier) }}</td>
+<td>{{ scaled(food.fiberG, food.portionMultiplier) }}</td>
+<td>{{ scaled(food.vitAMg, food.portionMultiplier) }}</td>
+<td>{{ scaled(food.vitCMg, food.portionMultiplier) }}</td>
+<td>{{ scaled(food.folicMg, food.portionMultiplier) }}</td>
+<td>{{ scaled(food.calciumMg, food.portionMultiplier) }}</td>
+<td>{{ scaled(food.ironMg, food.portionMultiplier) }}</td>
+<td>{{ scaled(food.potassiumMg, food.portionMultiplier) }}</td>
+<td>{{ scaled(food.sodiumMg, food.portionMultiplier) }}</td>
+<td>{{ scaled(food.phosphorusMg, food.portionMultiplier) }}</td>
+
+<td>
+  <span
+    class="gl-badge"
+    :class="glClass(scaled(food.glycemicLoad, food.portionMultiplier))"
+  >
+    {{ scaled(food.glycemicLoad, food.portionMultiplier) }}
+  </span>
+</td>
                   <td class="td-actions" @click.stop>
                     <div class="row-acts">
+                    <button
+  v-if="food.portionMultiplier !== 1"
+  class="act-btn"
+  @click="resetTemporaryPortion(food)"
+  title="Restaurar porción original"
+>
+  ↺
+</button>
                       <button class="act-btn" @click="openFoodModal(food)" title="Editar"><Pencil :size="13" /></button>
                       <button class="act-btn danger" @click="askDeleteFood(food)" title="Eliminar"><Trash2 :size="13" /></button>
                     </div>
@@ -475,6 +516,8 @@ interface Food {
   sodiumMg: number
   phosphorusMg: number
   glycemicLoad: number
+
+  portionMultiplier: number
 }
 
 interface FoodGroup {
@@ -560,6 +603,8 @@ function mapFood(row: FoodRow): Food {
     phosphorusMg: Number(row.phosphorus_mg ?? 0),
 
     glycemicLoad: Number(row.glycemic_load ?? 0),
+
+    portionMultiplier: 1,
   }
 }
 
@@ -708,6 +753,19 @@ function glClass(gl: number) {
   if (gl <= 19) return 'mid'
 
   return 'high'
+}
+
+
+function scaled(value: number, multiplier: number) {
+  return Number((value * multiplier).toFixed(2))
+}
+
+function displayedQuantity(food: Food) {
+  return Number((food.quantity * food.portionMultiplier).toFixed(2))
+}
+
+function resetTemporaryPortion(food: Food) {
+  food.portionMultiplier = 1
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -1348,6 +1406,45 @@ onMounted(async () => {
   padding: 1.3rem 1.3rem 1rem;
   border-bottom: 1px solid #f3f3f8;
   position: sticky; top: 0; background: #fff; z-index: 2;
+}.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,25,35,.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-card {
+  background: #fff;
+  border-radius: 22px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  box-shadow: 0 24px 60px rgba(0,0,0,.18);
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.food-modal-card {
+  max-width: 680px;
+}
+
+/* Header fijo arriba */
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1.3rem 1.3rem 1rem;
+  border-bottom: 1px solid #f3f3f8;
+  background: #fff;
+  flex-shrink: 0;
+  z-index: 2;
 }
 .modal-title-group { display: flex; align-items: center; gap: 11px; }
 .modal-icon-box {
@@ -1355,7 +1452,7 @@ onMounted(async () => {
   background: #f3eeff; color: #8E73A8;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
-.modal-title { font-size: 1rem; font-weight: 700; color: #0f1923; }
+.modal-title { font-size: 1rem; font-weight: 600; color: #0f1923; margin-bottom: 0;}
 .modal-sub   { font-size: .78rem; color: #9ca3af; margin-top: 2px; }
 .modal-close {
   background: none; border: none; cursor: pointer;
@@ -1363,7 +1460,11 @@ onMounted(async () => {
 }
 .modal-close:hover { color: #374151; background: #f3f4f6; }
 
-.modal-body { padding: 1.3rem; }
+.modal-body {
+  padding: 1.3rem;
+  overflow-y: auto;
+  flex: 1;
+}
 
 /* Form sections */
 .form-section-label {
@@ -1393,16 +1494,6 @@ onMounted(async () => {
 .ff input.err { border-color: #ef4444; }
 .ferr { font-size: .72rem; color: #ef4444; }
 
-/* Emoji picker */
-.emoji-picker { display: flex; flex-wrap: wrap; gap: 6px; }
-.emoji-opt {
-  width: 38px; height: 38px; font-size: 1.2rem;
-  border: 1.5px solid #e5e7eb; border-radius: 9px;
-  background: #f9fafb; cursor: pointer; transition: .15s;
-  display: flex; align-items: center; justify-content: center;
-}
-.emoji-opt:hover { border-color: #8E73A8; background: #f3eeff; }
-.emoji-opt.selected { border-color: #8E73A8; background: #f3eeff; box-shadow: 0 0 0 3px rgba(142,115,168,.12); }
 
 /* Modal footer */
 .modal-footer {
@@ -1495,6 +1586,44 @@ onMounted(async () => {
 .color-opt.selected {
   border-color: #ffffff;
   box-shadow: 0 0 0 3px rgba(15,25,35,.12);
+}
+
+.food-row.adjusted {
+  background: #fffbeb;
+}
+
+.food-row.adjusted .td-sticky {
+  background: #fffbeb;
+}
+
+.td-portion {
+  min-width: 90px;
+}
+
+.portion-value {
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: .84rem;
+  color: #374151;
+  cursor: pointer;
+  padding: 3px 6px;
+  border-radius: 6px;
+}
+
+.portion-value:hover {
+  background: #f3eeff;
+  color: #8E73A8;
+}
+
+.portion-input {
+  width: 72px;
+  padding: 5px 7px;
+  border: 1.5px solid #f59e0b;
+  border-radius: 7px;
+  font-size: .8rem;
+  outline: none;
+  background: #fff;
 }
 
 /* ── Responsive ───────────────────────────────────────────── */

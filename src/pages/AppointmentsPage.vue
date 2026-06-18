@@ -1168,7 +1168,7 @@ onMounted(async () => {
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
-.modal-title { font-size: 1.05rem; font-weight: 700; color: #0f1923; }
+.modal-title { font-size: 1.05rem; font-weight: 700; color: #0f1923; margin-bottom: 0; }
 .modal-sub   { font-size: .78rem; color: #9ca3af; margin-top: 2px; }
 .modal-close {
   background: none; border: none; cursor: pointer;

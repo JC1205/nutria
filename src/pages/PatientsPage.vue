@@ -1419,7 +1419,7 @@ watch(
 .modal-icon-box.edit   { background: #fffbeb; color: #d97706; }
 .modal-icon-box.detail { background: #eff6ff; color: #2563eb; }
 
-.modal-title { font-size: 1.1rem; font-weight: 700; color: #0f1923; }
+.modal-title { font-size: 1.1rem; font-weight: 700; color: #0f1923; margin-bottom: 0; }
 .modal-sub   { font-size: .8rem; color: #9ca3af; margin-top: 2px; }
 
 .modal-close {
@@ -1491,7 +1491,6 @@ watch(
   padding-top: 1rem;
   border-top: 1px solid #f3f3f8;
   background: #fff;
-  position: sticky;
   bottom: 0;
 }
 .modal-footer.centered { justify-content: center; }

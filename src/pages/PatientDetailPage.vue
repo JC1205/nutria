@@ -1619,6 +1619,7 @@ onMounted(async () => {
   font-size: 1.1rem;
   font-weight: 700;
   color: #0f1923;
+  margin-bottom: 0;
 }
 
 .modal-sub {
@@ -1698,7 +1699,6 @@ onMounted(async () => {
   padding-top: 1rem;
   border-top: 1px solid #f3f3f8;
   background: #fff;
-  position: sticky;
   bottom: 0;
 }
 
