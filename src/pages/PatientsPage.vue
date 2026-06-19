@@ -1050,14 +1050,14 @@ watch(
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 1.8rem;
+  margin-bottom: 1rem;
   opacity: 0;
   transform: translateY(-12px);
   transition: opacity .5s ease, transform .5s ease;
 }
 .page-header.visible { opacity: 1; transform: translateY(0); }
 
-.page-title    { font-size: 1.2rem; font-weight: 600; color: #0f1923; letter-spacing: -.5px; }
+.page-title    { font-size: 1.5rem; font-weight: 500; color: #0f1923; letter-spacing: -.5px; }
 .page-subtitle { font-size: .9rem; color: #9ca3af; margin-top: 4px; }
 
 .btn-add {
@@ -1593,6 +1593,9 @@ watch(
 /* Fade genérico */
 .fade-enter-active, .fade-leave-active { transition: opacity .2s; }
 .fade-enter-from,   .fade-leave-to     { opacity: 0; }
+
+
+
 
 /* ── Responsive ───────────────────────────────────────────── */
 @media (max-width: 900px) {

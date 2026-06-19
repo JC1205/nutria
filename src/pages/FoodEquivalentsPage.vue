@@ -1208,7 +1208,7 @@ onMounted(async () => {
 }
 .food-header-left { display: flex; align-items: center; gap: 14px; }
 
-.food-title    { font-size: 1.2rem; font-weight: 600; color: #0f1923; letter-spacing: -.4px; }
+.food-title    { font-size: 1.5rem; font-weight: 500; color: #0f1923; letter-spacing: -.4px; }
 .food-subtitle { font-size: .85rem; color: #9ca3af; margin-top: 3px; }
 
 .food-header-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }

@@ -1085,7 +1085,7 @@ onMounted(async () => {
 }
 
 .hero-name {
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   font-weight: 600;
   color: #0f1923;
   letter-spacing: -.4px;
