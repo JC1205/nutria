@@ -615,12 +615,75 @@
   </div>
 </Transition>
 
+<!-- ══════════════════════════════════════════════════════
+     MODAL: Vista previa PDF
+══════════════════════════════════════════════════════ -->
+<Transition name="modal-fade">
+  <div
+    v-if="pdfPreviewModal.open"
+    class="modal-overlay"
+    @click.self="pdfPreviewModal.open = false"
+  >
+    <Transition name="modal-slide">
+      <div v-if="pdfPreviewModal.open" class="modal-card pdf-preview-modal">
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <div class="modal-icon-box">
+              <Printer :size="18" />
+            </div>
+
+            <div>
+              <h2 class="modal-title">Vista previa del documento</h2>
+              <p class="modal-sub">
+                Plan alimenticio listo para generar PDF
+              </p>
+            </div>
+          </div>
+
+          <button class="modal-close" @click="pdfPreviewModal.open = false">
+            <X :size="18" />
+          </button>
+        </div>
+
+        <div class="pdf-preview-body">
+          <div ref="pdfContentRef">
+            <MealPlanPdfPreview
+  :selected-patient="selectedPatient"
+  :duration="duration"
+  :caloric-target="caloricTarget"
+  :week-range-label="weekRangeLabel"
+  :days="days"
+/>
+          </div>
+        </div>
+
+        <div class="modal-footer pdf-actions">
+          <button class="btn-secondary" @click="pdfPreviewModal.open = false">
+            Cerrar
+          </button>
+
+          <button
+            class="btn-save"
+            @click="downloadPlanPDF"
+            :disabled="generatingPdf"
+          >
+            <span v-if="generatingPdf" class="spinner-sm" />
+            <Printer v-else :size="15" />
+            Descargar PDF
+          </button>
+        </div>
+      </div>
+    </Transition>
+  </div>
+</Transition>
+
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import MealPlanPdfPreview from '@/components/MealPlanPdfPreview.vue'
 import {
   Printer,
   Save,
@@ -793,6 +856,13 @@ const selectedPatientId = computed(() => {
 
   return patient?.id ?? ''
 })
+
+const pdfPreviewModal = reactive({
+  open: false,
+})
+
+const generatingPdf = ref(false)
+const pdfContentRef = ref<HTMLElement | null>(null)
 
 /* ─────────────────────────────────────────────────────────
    USUARIO
@@ -1453,7 +1523,54 @@ async function savePlan() {
    PDF
 ───────────────────────────────────────────────────────── */
 function previewPDF() {
-  console.log('Vista previa PDF pendiente')
+  pdfPreviewModal.open = true
+}
+
+async function downloadPlanPDF() {
+  if (!pdfContentRef.value) return
+
+  generatingPdf.value = true
+
+  try {
+    const html2pdf = (await import('html2pdf.js')).default
+
+    const patientName =
+  typeof selectedPatient === 'string'
+    ? selectedPatient
+    : selectedPatient.value || 'paciente'
+
+const filename = `plan-alimenticio-${patientName}.pdf`
+  .toLowerCase()
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .replace(/\s+/g, '-')
+  .replace(/[^a-z0-9.-]/g, '')
+
+    await html2pdf()
+  .set({
+    margin: [6, 6, 6, 6],
+    filename,
+    image: {
+      type: 'jpeg',
+      quality: 0.98,
+    },
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+      scrollX: 0,
+      scrollY: 0,
+    },
+    jsPDF: {
+      unit: 'mm',
+      format: 'a4',
+      orientation: 'portrait',
+    },
+  })
+  .from(pdfContentRef.value)
+  .save()
+  } finally {
+    generatingPdf.value = false
+  }
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -2606,4 +2723,55 @@ onMounted(async () => {
   color: #0f1923;
   box-shadow: 0 0 0 3px rgba(142,115,168,.1);
 }
+
+/* ══════════════════════════════════════════════════════════
+   MODAL PDF PREVIEW
+══════════════════════════════════════════════════════════ */
+.pdf-preview-modal {
+  max-width: 920px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.pdf-preview-body {
+  background: #f3f4f6;
+  padding: 1.2rem;
+  overflow-y: auto;
+}
+
+.pdf-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 1rem 1.3rem;
+  border-top: 1px solid #f3f3f8;
+  background: #fff;
+}
+
+/* ══════════════════════════════════════════════════════════
+   DOCUMENTO PDF
+══════════════════════════════════════════════════════════ */
+.pdf-preview-modal {
+  max-width: 920px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.pdf-preview-body {
+  background: #f3f4f6;
+  padding: 1.2rem;
+  overflow-y: auto;
+}
+
+.pdf-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 1rem 1.3rem;
+  border-top: 1px solid #f3f3f8;
+  background: #fff;
+}
+
 </style>

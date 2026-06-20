@@ -8,7 +8,7 @@
       <img
         v-if="!isCollapsed"
         key="full-logo"
-        src="/src/assets/logo-nutria2.png"
+        src="/src/assets/logo-nutria-06.png"
         alt="Nutría"
         class="brand-logo full"
       />
@@ -16,7 +16,7 @@
       <img
         v-else
         key="small-logo"
-        src="/src/assets/m-logo-nutria.png"
+        src="/src/assets/logo-nutria-07.png"
         alt="Nutría"
         class="brand-logo small"
       />
@@ -250,7 +250,7 @@ async function handleSignOut() {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #8E73A8;
+  color: #3E9B92;
   transition: background .2s, border-color .2s, transform .2s;
 }
 
@@ -262,7 +262,7 @@ async function handleSignOut() {
   width: 24px;
   height: 24px;
 }
-.collapse-btn:hover { background: #f3eeff; border-color: #cbb8e8; }
+.collapse-btn:hover { background: #dffbf8; border-color: #addad6; }
 
 .collapse-btn svg {
   transition: transform .35s cubic-bezier(.4, 0, .2, 1);
@@ -307,14 +307,14 @@ async function handleSignOut() {
 }
 
 .nav-item:hover:not(.active) {
-  background: #f7f4ff;
-  color: #8E73A8;
+  background: #f0fafa;
+  color: #3E9B92;
   transform: translateX(2px);
 }
 
 .nav-item.active {
-  background: linear-gradient(135deg, #f3eeff 0%, #ede6ff 100%);
-  color: #8E73A8;
+  background: linear-gradient(135deg, #e7fffd 0%, #d9f9f6 100%);
+  color: #3E9B92;
   font-weight: 600;
 }
 
@@ -336,7 +336,7 @@ async function handleSignOut() {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #8E73A8;
+  background: #3E9B92;
   flex-shrink: 0;
   margin-left: auto;
 }
@@ -359,8 +359,8 @@ async function handleSignOut() {
   gap: 10px;
   padding: 10px 12px;
   border-radius: 12px;
-  background: #faf9ff;
-  border: 1px solid #f0ebff;
+  background: #effffc;
+  border: 1px solid #e9f9f8;
   overflow: hidden;
   transition: padding .35s;
 }
@@ -371,7 +371,7 @@ async function handleSignOut() {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #8E73A8 0%, #6b50a0 100%);
+  background: linear-gradient(135deg, #3E9B92 0%, #3E9B92 100%);
   display: flex;
   align-items: center;
   justify-content: center;

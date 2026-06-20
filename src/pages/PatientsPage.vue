@@ -1065,7 +1065,7 @@ watch(
   align-items: center;
   gap: 8px;
   padding: 11px 20px;
-  background: #8E73A8;
+  background: #3E9B92;
   color: #fff;
   border: none;
   border-radius: 12px;
