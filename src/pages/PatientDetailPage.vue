@@ -353,43 +353,125 @@
 
       <!-- ══ TAB: Planes de comida ══ -->
       <div v-if="activeTab === 'mealplans'" class="tab-pane">
-        <div class="card">
-          <h2 class="card-title">Planes de comida asignados</h2>
-          <div class="plan-list">
-            <div v-for="p in patient.mealPlans" :key="p.name" class="plan-item">
-              <div class="plan-icon">🥗</div>
-              <div class="plan-info">
-                <p class="plan-name">{{ p.name }}</p>
-                <p class="plan-meta">{{ p.calories }} kcal · {{ p.start }} → {{ p.end }}</p>
-              </div>
-              <span class="plan-badge" :class="p.active ? 'active' : ''">
-                {{ p.active ? 'Activo' : 'Finalizado' }}
-              </span>
-            </div>
-          </div>
-        </div>
+  <div class="card">
+    <div class="card-head">
+      <h2 class="card-title">Planes de comida asignados</h2>
+
+      <button class="btn-appt" @click="goToNewMealPlan">
+        Crear plan
+      </button>
+    </div>
+
+    <div class="meal-plans-list">
+      <div v-if="loadingMealPlans" class="empty-state">
+        Cargando planes...
       </div>
+
+      <div v-else-if="!mealPlans.length" class="empty-state">
+        Este paciente todavía no tiene planes guardados.
+      </div>
+
+      <template v-else>
+        <button
+  v-for="plan in mealPlans"
+  :key="plan.id"
+  class="meal-plan-item"
+  @click="openMealPlanDetail(plan)"
+>
+  <div class="meal-plan-icon">
+    🥗
+  </div>
+
+  <div class="meal-plan-info">
+    <strong>{{ plan.title }}</strong>
+
+    <span>
+      {{ plan.duration_days }} días
+
+      <template v-if="plan.start_date">
+        · Inicio: {{ formatDate(plan.start_date) }}
+      </template>
+
+      · Guardado: {{ formatDate(plan.created_at) }}
+    </span>
+
+    <p v-if="plan.notes">
+      {{ plan.notes }}
+    </p>
+  </div>
+
+  <div class="meal-plan-actions">
+  <span class="meal-plan-action">Ver plan</span>
+
+  <button
+  class="delete-mini-btn"
+  @click.stop="askDeleteMealPlan(plan)"
+  title="Eliminar plan"
+>
+  Eliminar
+</button>
+</div>
+</button>
+      </template>
+    </div>
+  </div>
+</div>
 
       <!-- ══ TAB: Documentos ══ -->
       <div v-if="activeTab === 'documents'" class="tab-pane">
-        <div class="card">
-          <h2 class="card-title">Documentos</h2>
-          <div class="doc-list">
-            <div v-for="d in patient.documents" :key="d.name" class="doc-item">
-              <div class="doc-icon">📄</div>
-              <div class="doc-info">
-                <p class="doc-name">{{ d.name }}</p>
-                <p class="doc-date">{{ formatDate(d.date) }}</p>
-              </div>
-              <button class="doc-download">⬇ Descargar</button>
-            </div>
-          </div>
-          <div class="doc-upload">
-            <span class="upload-icon">📎</span>
-            <p>Arrastra archivos aquí o <a href="#">selecciona</a></p>
-          </div>
-        </div>
+  <div class="card">
+    <h2 class="card-title">Documentos</h2>
+
+    <div class="documents-list">
+      <div v-if="loadingDocuments" class="empty-state">
+        Cargando documentos...
       </div>
+
+      <div v-else-if="!documents.length" class="empty-state">
+        No hay documentos guardados para este paciente.
+      </div>
+
+      <template v-else>
+        <button
+          v-for="doc in documents"
+          :key="doc.id"
+          class="document-item"
+          @click="openDocument(doc)"
+        >
+          <div class="document-icon">
+            <FileText :size="18" />
+          </div>
+
+          <div class="document-info">
+            <strong>{{ doc.name }}</strong>
+
+            <span>
+              {{ doc.type === 'meal_plan_pdf' ? 'Plan alimenticio PDF' : 'Documento' }}
+
+              <template v-if="doc.file_size_kb">
+                · {{ doc.file_size_kb }} KB
+              </template>
+
+              · {{ formatDate(doc.created_at) }}
+            </span>
+          </div>
+
+          <div class="document-actions">
+  <span class="document-action">Abrir</span>
+
+  <button
+  class="delete-mini-btn"
+  @click.stop="askDeleteDocument(doc)"
+  title="Eliminar documento"
+>
+  Eliminar
+</button>
+</div>
+        </button>
+      </template>
+    </div>
+  </div>
+</div>
 
     </div><!-- /tab-content -->
 <Transition name="modal-fade">
@@ -515,6 +597,208 @@
     </div>
   </div>
 </Transition>
+
+<Transition name="modal-fade">
+  <div
+    v-if="mealPlanDetailModal.open"
+    class="modal-overlay"
+    @click.self="mealPlanDetailModal.open = false"
+  >
+    <div class="modal-card meal-plan-detail-modal">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title">
+            {{ selectedMealPlan?.title || 'Detalle del plan' }}
+          </h2>
+
+          <p class="modal-sub">
+            {{ selectedMealPlan?.duration_days }} días
+            <template v-if="selectedMealPlan?.start_date">
+              · Inicio: {{ formatDate(selectedMealPlan.start_date) }}
+            </template>
+          </p>
+        </div>
+
+        <button class="modal-close" @click="mealPlanDetailModal.open = false">
+          ×
+        </button>
+      </div>
+
+      <div class="plan-detail-summary">
+        <div>
+          <span>Paciente</span>
+          <strong>{{ patient.name }}</strong>
+        </div>
+
+        <div>
+          <span>Duración</span>
+          <strong>{{ selectedMealPlan?.duration_days || 0 }} días</strong>
+        </div>
+
+        <div>
+          <span>Inicio</span>
+          <strong>
+            {{ selectedMealPlan?.start_date ? formatDate(selectedMealPlan.start_date) : 'Sin fecha' }}
+          </strong>
+        </div>
+
+        <div>
+          <span>Elementos</span>
+          <strong>{{ selectedMealPlanItems.length }}</strong>
+        </div>
+      </div>
+
+      <div class="modal-body plan-detail-body">
+        <div v-if="loadingMealPlanDetail" class="empty-state">
+          Cargando detalle del plan...
+        </div>
+
+        <div v-else-if="!selectedMealPlanItems.length" class="empty-state">
+          Este plan no tiene alimentos guardados.
+        </div>
+
+        <div v-else class="saved-plan-detail">
+          <div
+            v-for="dayNumber in selectedMealPlan?.duration_days || 0"
+            :key="dayNumber"
+            class="saved-plan-day"
+          >
+            <div class="saved-plan-day-title">
+              <div>
+                <h3>Día {{ dayNumber }}</h3>
+                <p>{{ itemsByDay(dayNumber).length }} elementos guardados</p>
+              </div>
+
+              <span>{{ itemsByDay(dayNumber).length }}</span>
+            </div>
+
+            <div class="saved-plan-meals">
+              <div
+                v-for="mealType in ['desayuno', 'colacion_manana', 'comida', 'colacion_tarde', 'cena']"
+                :key="mealType"
+                class="saved-plan-meal"
+              >
+                <div class="saved-plan-meal-title">
+                  {{ mealTypeLabel(mealType) }}
+                </div>
+
+                <div
+                  v-if="itemsByMeal(dayNumber, mealType).length"
+                  class="saved-plan-foods"
+                >
+                  <div
+                    v-for="item in itemsByMeal(dayNumber, mealType)"
+                    :key="item.id"
+                    class="saved-plan-food"
+                  >
+                    <strong>{{ cleanPortionNote(item.portion_notes) }}</strong>
+
+                    <p v-if="cleanPortionDetail(item.portion_notes)">
+                      {{ cleanPortionDetail(item.portion_notes) }}
+                    </p>
+                  </div>
+                </div>
+
+                <p v-else class="saved-plan-empty-meal">
+                  Sin alimentos
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer plan-detail-footer">
+        <button class="btn-secondary" @click="mealPlanDetailModal.open = false">
+          Cerrar
+        </button>
+
+        <button class="btn-appt" @click="editMealPlan(selectedMealPlan)">
+          <Pencil :size="15" />
+          Editar plan
+        </button>
+      </div>
+    </div>
+  </div>
+</Transition>
+<Transition name="modal-fade">
+  <div
+    v-if="deleteMealPlanModal.open"
+    class="modal-overlay"
+    @click.self="deleteMealPlanModal.open = false"
+  >
+    <div class="modal-card delete-modal">
+      <div class="delete-icon">
+        🗑️
+      </div>
+
+      <h3 class="delete-title">¿Eliminar plan?</h3>
+
+      <p class="delete-sub">
+        Se eliminará el plan
+        <strong>{{ deleteMealPlanModal.plan?.title }}</strong>
+        y todos sus alimentos guardados.
+      </p>
+
+      <div class="delete-actions">
+        <button
+          class="btn-secondary"
+          @click="deleteMealPlanModal.open = false"
+          :disabled="deleteMealPlanModal.deleting"
+        >
+          Cancelar
+        </button>
+
+        <button
+          class="btn-danger"
+          @click="deleteMealPlan"
+          :disabled="deleteMealPlanModal.deleting"
+        >
+          {{ deleteMealPlanModal.deleting ? 'Eliminando...' : 'Eliminar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</Transition>
+<Transition name="modal-fade">
+  <div
+    v-if="deleteDocumentModal.open"
+    class="modal-overlay"
+    @click.self="deleteDocumentModal.open = false"
+  >
+    <div class="modal-card delete-modal">
+      <div class="delete-icon">
+        📄
+      </div>
+
+      <h3 class="delete-title">¿Eliminar documento?</h3>
+
+      <p class="delete-sub">
+        Se eliminará el documento
+        <strong>{{ deleteDocumentModal.document?.name }}</strong>
+        del paciente y también del almacenamiento.
+      </p>
+
+      <div class="delete-actions">
+        <button
+          class="btn-secondary"
+          @click="deleteDocumentModal.open = false"
+          :disabled="deleteDocumentModal.deleting"
+        >
+          Cancelar
+        </button>
+
+        <button
+          class="btn-danger"
+          @click="deleteDocument"
+          :disabled="deleteDocumentModal.deleting"
+        >
+          {{ deleteDocumentModal.deleting ? 'Eliminando...' : 'Eliminar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</Transition>
   </div>
 </template>
 
@@ -547,6 +831,40 @@ const pageError = ref('')
 
 const editModalOpen = ref(false)
 const savingEdit = ref(false)
+
+const documents = ref<DocumentRow[]>([])
+const loadingDocuments = ref(false)
+
+const mealPlans = ref<MealPlanRow[]>([])
+const loadingMealPlans = ref(false)
+
+const selectedMealPlan = ref<MealPlanRow | null>(null)
+const selectedMealPlanItems = ref<MealPlanItemRow[]>([])
+const loadingMealPlanDetail = ref(false)
+
+const mealPlanDetailModal = reactive({
+  open: false,
+})
+
+const deleteMealPlanModal = reactive<{
+  open: boolean
+  plan: MealPlanRow | null
+  deleting: boolean
+}>({
+  open: false,
+  plan: null,
+  deleting: false,
+})
+
+const deleteDocumentModal = reactive<{
+  open: boolean
+  document: DocumentRow | null
+  deleting: boolean
+}>({
+  open: false,
+  document: null,
+  deleting: false,
+})
 
 const editForm = reactive({
   name: '',
@@ -652,7 +970,7 @@ const patient = ref<PatientView>({
   id: '',
   name: '',
   initials: '',
-  color: '#8E73A8',
+  color: '#3E9B92',
   age: 0,
   birthDate: null,
   sex: 'F',
@@ -679,6 +997,35 @@ const patient = ref<PatientView>({
   mealPlans: [],
   documents: [],
 })
+
+interface DocumentRow {
+  id: string
+  name: string
+  type: string
+  file_path: string | null
+  file_size_kb: number | null
+  meal_plan_id: string | null
+  created_at: string
+}
+
+interface MealPlanRow {
+  id: string
+  title: string
+  duration_days: number
+  start_date: string | null
+  notes: string | null
+  created_at: string
+}
+
+interface MealPlanItemRow {
+  id: string
+  meal_plan_id: string
+  recipe_id: string | null
+  day_number: number
+  meal_type: string
+  portion_notes: string | null
+  order_index: number | null
+}
 
 function getInitials(name: string) {
   return name
@@ -795,7 +1142,7 @@ async function loadPatient() {
     id: data.id,
     name: data.full_name,
     initials: getInitials(data.full_name),
-    color: '#8E73A8',
+    color: '#3E9B92',
     age: calculateAge(data.birth_date),
     sex: data.sex === 'male' ? 'M' : 'F',
     birthDate: data.birth_date,
@@ -852,6 +1199,266 @@ async function loadPatient() {
       date: document.created_at,
     })),
   }
+}
+
+
+async function ensureUser() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  return user
+}
+
+
+async function loadDocuments() {
+  const user = await ensureUser()
+
+  if (!user || !patient.value) return
+
+  loadingDocuments.value = true
+
+  const { data, error } = await supabase
+    .from('documents')
+    .select('id, name, type, file_path, file_size_kb, meal_plan_id, created_at')
+    .eq('user_id', user.id)
+    .eq('patient_id', patient.value.id)
+    .order('created_at', { ascending: false })
+
+  loadingDocuments.value = false
+
+  if (error) {
+    pageError.value = error.message
+    return
+  }
+
+  documents.value = data ?? []
+}
+
+async function openDocument(doc: DocumentRow) {
+  if (!doc.file_path) {
+    pageError.value = 'Este documento no tiene archivo asociado.'
+    return
+  }
+
+  const { data, error } = await supabase.storage
+    .from('nutria-files')
+    .createSignedUrl(doc.file_path, 60)
+
+  if (error) {
+    pageError.value = error.message
+    return
+  }
+
+  window.open(data.signedUrl, '_blank')
+}
+
+function askDeleteDocument(doc: DocumentRow) {
+  deleteDocumentModal.document = doc
+  deleteDocumentModal.open = true
+}
+
+async function deleteDocument() {
+  const doc = deleteDocumentModal.document
+
+  if (!doc) return
+
+  const user = await ensureUser()
+
+  if (!user) {
+    pageError.value = 'No hay una sesión activa.'
+    return
+  }
+
+  deleteDocumentModal.deleting = true
+  pageError.value = ''
+
+  try {
+    if (doc.file_path) {
+      const { error: storageError } = await supabase.storage
+        .from('nutria-files')
+        .remove([doc.file_path])
+
+      if (storageError) throw storageError
+    }
+
+    const { error: deleteError } = await supabase
+      .from('documents')
+      .delete()
+      .eq('id', doc.id)
+      .eq('user_id', user.id)
+
+    if (deleteError) throw deleteError
+
+    documents.value = documents.value.filter((item) => item.id !== doc.id)
+
+    deleteDocumentModal.open = false
+    deleteDocumentModal.document = null
+  } catch (err) {
+    pageError.value =
+      err instanceof Error
+        ? err.message
+        : 'No se pudo eliminar el documento.'
+  } finally {
+    deleteDocumentModal.deleting = false
+  }
+}
+
+async function loadMealPlans() {
+  const user = await ensureUser()
+
+  if (!user || !patient.value) return
+
+  loadingMealPlans.value = true
+
+  const { data, error } = await supabase
+    .from('meal_plans')
+    .select('id, title, duration_days, start_date, notes, created_at')
+    .eq('user_id', user.id)
+    .eq('patient_id', patient.value.id)
+    .order('created_at', { ascending: false })
+
+  loadingMealPlans.value = false
+
+  if (error) {
+    pageError.value = error.message
+    return
+  }
+
+  mealPlans.value = data ?? []
+}
+
+function askDeleteMealPlan(plan: MealPlanRow) {
+  deleteMealPlanModal.plan = plan
+  deleteMealPlanModal.open = true
+}
+
+async function deleteMealPlan() {
+  const plan = deleteMealPlanModal.plan
+
+  if (!plan) return
+
+  const user = await ensureUser()
+
+  if (!user) {
+    pageError.value = 'No hay una sesión activa.'
+    return
+  }
+
+  deleteMealPlanModal.deleting = true
+  pageError.value = ''
+
+  try {
+    const { error } = await supabase
+      .from('meal_plans')
+      .delete()
+      .eq('id', plan.id)
+      .eq('user_id', user.id)
+
+    if (error) throw error
+
+    mealPlans.value = mealPlans.value.filter((item) => item.id !== plan.id)
+
+    if (selectedMealPlan.value?.id === plan.id) {
+      mealPlanDetailModal.open = false
+      selectedMealPlan.value = null
+      selectedMealPlanItems.value = []
+    }
+
+    deleteMealPlanModal.open = false
+    deleteMealPlanModal.plan = null
+  } catch (err) {
+    pageError.value =
+      err instanceof Error
+        ? err.message
+        : 'No se pudo eliminar el plan.'
+  } finally {
+    deleteMealPlanModal.deleting = false
+  }
+}
+
+function goToNewMealPlan() {
+  router.push({
+    path: '/meal-plans',
+    query: {
+      patientId: patient.value?.id,
+    },
+  })
+}
+
+function editMealPlan(plan: MealPlanRow | null) {
+  if (!plan) return
+
+  router.push({
+    path: '/meal-plans',
+    query: {
+      patientId: patient.value.id,
+      mealPlanId: plan.id,
+      mode: 'edit',
+    },
+  })
+}
+
+async function openMealPlanDetail(plan: MealPlanRow) {
+  selectedMealPlan.value = plan
+  selectedMealPlanItems.value = []
+  mealPlanDetailModal.open = true
+  loadingMealPlanDetail.value = true
+  pageError.value = ''
+
+  const { data, error } = await supabase
+    .from('meal_plan_items')
+    .select('id, meal_plan_id, recipe_id, day_number, meal_type, portion_notes, order_index')
+    .eq('meal_plan_id', plan.id)
+    .order('day_number', { ascending: true })
+    .order('order_index', { ascending: true })
+
+  loadingMealPlanDetail.value = false
+
+  if (error) {
+    pageError.value = error.message
+    return
+  }
+
+  selectedMealPlanItems.value = data ?? []
+}
+
+function mealTypeLabel(type: string) {
+  const labels: Record<string, string> = {
+    desayuno: 'Desayuno',
+    colacion_manana: 'Colación matutina',
+    comida: 'Comida',
+    colacion_tarde: 'Colación vespertina',
+    cena: 'Cena',
+  }
+
+  return labels[type] ?? type
+}
+
+function itemsByDay(dayNumber: number) {
+  return selectedMealPlanItems.value.filter((item) => item.day_number === dayNumber)
+}
+
+function itemsByMeal(dayNumber: number, mealType: string) {
+  return selectedMealPlanItems.value.filter(
+    (item) => item.day_number === dayNumber && item.meal_type === mealType,
+  )
+}
+
+function cleanPortionNote(note: string | null) {
+  if (!note) return 'Sin descripción'
+
+  const parts = note.split('|').map((part) => part.trim())
+
+  return parts[0] ?? note
+}
+
+function cleanPortionDetail(note: string | null) {
+  if (!note) return ''
+
+  const parts = note.split('|').map((part) => part.trim())
+
+  return parts.slice(1).join(' · ')
 }
 
 /* ── Cálculos automáticos ────────────────────────────────── */
@@ -1019,11 +1626,13 @@ async function saveEditPatient() {
 }
 
 onMounted(async () => {
-  await loadPatient()
-
   setTimeout(() => {
     mounted.value = true
   }, 80)
+
+  await loadPatient()
+  await loadMealPlans()
+  await loadDocuments()
 })
 </script>
 
@@ -1058,7 +1667,7 @@ onMounted(async () => {
   transition: color .2s, background .2s;
   margin-bottom: 1.4rem;
 }
-.back-btn:hover { color: #8E73A8; background: #f3eeff; }
+.back-btn:hover { color: #3E9B92; background: #e6f8f6; }
 
 /* ── Hero ─────────────────────────────────────────────────── */
 .hero {
@@ -1130,12 +1739,12 @@ onMounted(async () => {
   font-family: inherit;
   transition: .2s;
 }
-.btn-edit:hover { border-color: #8E73A8; color: #8E73A8; background: #faf7ff; }
+.btn-edit:hover { border-color: #3E9B92; color: #3E9B92; background: #f1fbfa; }
 
 .btn-appt {
   display: flex; align-items: center; gap: 7px;
   padding: 10px 18px;
-  background: #8E73A8;
+  background: #3E9B92;
   color: #fff;
   border: none;
   border-radius: 11px;
@@ -1145,7 +1754,7 @@ onMounted(async () => {
   font-family: inherit;
   transition: .2s;
 }
-.btn-appt:hover { background: #7a5f97; transform: translateY(-1px);  box-shadow: 0 4px 14px rgba(142,115,168,.35); }
+.btn-appt:hover { background: #357d76; transform: translateY(-1px);  box-shadow: 0 4px 14px rgba(175, 175, 176, 0.35); }
 .btn-appt.small { padding: 7px 14px; font-size: .82rem; }
 
 /* ── Tabs ─────────────────────────────────────────────────── */
@@ -1175,11 +1784,11 @@ onMounted(async () => {
   white-space: nowrap;
   transition: color .2s;
 }
-.tab-btn:hover { color: #8E73A8; }
+.tab-btn:hover { color: #3E9B92; }
 .tab-btn.active {
-  color: #8E73A8;
+  color: #3E9B92;
   font-weight: 600;
-  border-bottom-color: #8E73A8;
+  border-bottom-color: #3E9B92;
 }
 
 /* ── Grid layout ──────────────────────────────────────────── */
@@ -1341,7 +1950,7 @@ onMounted(async () => {
 .progress-info { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
 .prog-current  { font-size: 1.1rem; font-weight: 700; color: #0f1923; }
 .prog-arrow    { color: #9ca3af; }
-.prog-goal     { font-size: 1.1rem; font-weight: 700; color: #8E73A8; }
+.prog-goal     { font-size: 1.1rem; font-weight: 700; color: #3E9B92; }
 
 .prog-bar-wrap { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
 .prog-bar {
@@ -1353,11 +1962,11 @@ onMounted(async () => {
 }
 .prog-fill {
   height: 100%;
-  background: linear-gradient(90deg, #8E73A8, #6b50a0);
+  background: linear-gradient(90deg, #3E9B92, #3E9B92);
   border-radius: 10px;
   transition: width 1s ease;
 }
-.prog-pct { font-size: .8rem; font-weight: 700; color: #8E73A8; min-width: 32px; }
+.prog-pct { font-size: .8rem; font-weight: 700; color: #3E9B92; min-width: 32px; }
 .prog-diff { font-size: .78rem; margin-top: 6px; font-weight: 600; }
 .prog-diff.neg { color: #be185d; }
 .prog-diff.pos { color: #065f46; }
@@ -1426,7 +2035,7 @@ onMounted(async () => {
   border-radius: 10px;
 }
 .hs-label { font-size: .85rem; color: #6b7280; }
-.hs-val   { font-size: 1rem; font-weight: 700; color: #8E73A8; }
+.hs-val   { font-size: 1rem; font-weight: 700; color: #3E9B92; }
 
 /* ── Tabla mediciones ─────────────────────────────────────── */
 .meas-table { width: 100%; border-collapse: collapse; }
@@ -1447,7 +2056,7 @@ onMounted(async () => {
   border-bottom: 1px solid #f7f7fb;
 }
 .meas-table tr:last-child td { border-bottom: none; }
-.meas-table tr:hover td { background: #faf8ff; }
+.meas-table tr:hover td { background: #f1fbfa; }
 
 /* ── Citas ────────────────────────────────────────────────── */
 .appt-list { display: flex; flex-direction: column; gap: 10px; }
@@ -1464,14 +2073,14 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: #f3eeff;
+  background: #e6f8f6;
   border-radius: 10px;
   padding: 8px 12px;
   min-width: 50px;
   flex-shrink: 0;
 }
-.appt-day   { font-size: 1.2rem; font-weight: 700; color: #8E73A8; line-height: 1; }
-.appt-month { font-size: .68rem; font-weight: 600; color: #8E73A8; text-transform: uppercase; }
+.appt-day   { font-size: 1.2rem; font-weight: 700; color: #3E9B92; line-height: 1; }
+.appt-month { font-size: .68rem; font-weight: 600; color: #3E9B92; text-transform: uppercase; }
 .appt-type  { font-size: .9rem; font-weight: 600; color: #0f1923; }
 .appt-notes { font-size: .78rem; color: #9ca3af; margin-top: 3px; }
 .appt-badge {
@@ -1546,7 +2155,7 @@ onMounted(async () => {
   transition: .2s;
   white-space: nowrap;
 }
-.doc-download:hover { border-color: #8E73A8; color: #8E73A8; }
+.doc-download:hover { border-color: #3E9B92; color: #3E9B92; }
 
 .doc-upload {
   border: 2px dashed #e5e7eb;
@@ -1558,9 +2167,9 @@ onMounted(async () => {
   transition: border-color .2s;
   cursor: pointer;
 }
-.doc-upload:hover { border-color: #8E73A8; color: #8E73A8; }
+.doc-upload:hover { border-color: #3E9B92; color: #3E9B92; }
 .upload-icon { font-size: 1.5rem; display: block; margin-bottom: 6px; }
-.doc-upload a { color: #8E73A8; font-weight: 600; text-decoration: none; }
+.doc-upload a { color: #3E9B92; font-weight: 600; text-decoration: none; }
 
 /* ── Animaciones ──────────────────────────────────────────── */
 @keyframes fadeUp {
@@ -1687,7 +2296,7 @@ onMounted(async () => {
 .form-field input:focus,
 .form-field select:focus,
 .form-field textarea:focus {
-  border-color: #8E73A8;
+  border-color: #3E9B92;
   background: #fff;
   box-shadow: 0 0 0 4px rgba(142, 115, 168, 0.1);
 }
@@ -1727,6 +2336,650 @@ onMounted(async () => {
 
   .form-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+.documents-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.document-item {
+  width: 100%;
+  border: 1.5px solid #f0f0f5;
+  background: #fff;
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  transition: .2s ease;
+}
+
+.document-item:hover {
+  border-color: #3E9B92;
+  background: #f1fbfa;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(142, 115, 168, .12);
+}
+
+.document-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #e6f8f6;
+  color: #3E9B92;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.document-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.document-info strong {
+  font-size: .88rem;
+  color: #0f1923;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.document-info span {
+  font-size: .75rem;
+  color: #9ca3af;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.document-action {
+  flex-shrink: 0;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #e6f8f6;
+  color: #3E9B92;
+  font-size: .76rem;
+  font-weight: 800;
+  transition: .2s ease;
+}
+
+.document-item:hover .document-action {
+  background: #3E9B92;
+  color: #fff;
+}
+
+.empty-state {
+  padding: 1.2rem;
+  border: 1.5px dashed #e5e7eb;
+  border-radius: 14px;
+  background: #fafafa;
+  color: #9ca3af;
+  font-size: .86rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+@media (max-width: 560px) {
+  .document-item {
+    align-items: flex-start;
+  }
+
+  .document-action {
+    display: none;
+  }
+
+  .document-info strong {
+    white-space: normal;
+  }
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 1rem;
+}
+
+.meal-plans-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.meal-plan-item {
+  width: 95%;
+  border: 1.5px solid #f0f0f5;
+  background: #fff;
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  transition: .2s ease;
+}
+
+.meal-plan-item:hover {
+  border-color: #3E9B92;
+  background: #f1fbfa;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(142, 115, 168, .12);
+}
+
+.meal-plan-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #e6f8f6;
+  color: #3E9B92;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1.2rem;
+}
+
+.meal-plan-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.meal-plan-info strong {
+  display: block;
+  font-size: .9rem;
+  color: #0f1923;
+  font-weight: 800;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meal-plan-info span {
+  display: block;
+  font-size: .75rem;
+  color: #9ca3af;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.meal-plan-info p {
+  margin-top: 6px;
+  font-size: .78rem;
+  color: #6b7280;
+  line-height: 1.35;
+}
+
+.empty-state {
+  padding: 1.2rem;
+  border: 1.5px dashed #e5e7eb;
+  border-radius: 14px;
+  background: #fafafa;
+  color: #9ca3af;
+  font-size: .86rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+@media (max-width: 560px) {
+  .card-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .card-head .btn-appt {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .meal-plan-item {
+    padding: 12px;
+  }
+
+  .meal-plan-info strong {
+    white-space: normal;
+  }
+}
+
+
+.meal-plan-item {
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.meal-plan-action {
+  flex-shrink: 0;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #f3eeff;
+  color: #8E73A8;
+  font-size: .76rem;
+  font-weight: 800;
+  transition: .2s ease;
+}
+
+.meal-plan-item:hover .meal-plan-action {
+  background: #8E73A8;
+  color: #fff;
+}
+
+.meal-plan-detail-modal {
+  max-width: 860px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.plan-modal-hero {
+  background: linear-gradient(135deg, #8E73A8, #6f4f91);
+  color: #fff;
+  padding: 1.35rem 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.plan-modal-main {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.plan-modal-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.55rem;
+  flex-shrink: 0;
+}
+
+.plan-modal-main h2 {
+  font-size: 1.2rem;
+  font-weight: 850;
+  margin: 0;
+}
+
+.plan-modal-main p {
+  margin-top: 4px;
+  font-size: .82rem;
+  opacity: .86;
+  font-weight: 600;
+}
+
+.modal-close.light {
+  color: #fff;
+  background: rgba(255, 255, 255, .15);
+}
+
+.modal-close.light:hover {
+  background: rgba(255, 255, 255, .25);
+}
+
+.plan-modal-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding: 1rem 1.3rem;
+  background: #faf8ff;
+  border-bottom: 1px solid #eee6f8;
+}
+
+.plan-modal-summary div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.plan-modal-summary span {
+  font-size: .68rem;
+  color: #9ca3af;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.plan-modal-summary strong {
+  font-size: .84rem;
+  color: #0f1923;
+  font-weight: 850;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.plan-modal-body {
+  overflow-y: auto;
+  padding: 1.2rem 1.3rem;
+}
+
+.meal-plan-detail-modal {
+  max-width: 820px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.plan-detail-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding: 1rem 1.3rem;
+  background: #faf8ff;
+  border-bottom: 1px solid #eee6f8;
+}
+
+.plan-detail-summary div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.plan-detail-summary span {
+  font-size: .68rem;
+  color: #9ca3af;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.plan-detail-summary strong {
+  font-size: .84rem;
+  color: #0f1923;
+  font-weight: 850;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.plan-detail-body {
+  overflow-y: auto;
+  padding: 1.2rem 1.3rem;
+}
+
+.saved-plan-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.saved-plan-day {
+  border: 1.5px solid #eeeef5;
+  border-radius: 16px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.saved-plan-day-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 15px;
+  background: #f8fafb;
+  border-bottom: 1px solid #eeeef5;
+}
+
+.saved-plan-day-title h3 {
+  font-size: .95rem;
+  font-weight: 900;
+  color: #0f1923;
+  margin: 0;
+}
+
+.saved-plan-day-title p {
+  margin-top: 2px;
+  font-size: .73rem;
+  color: #9ca3af;
+  font-weight: 600;
+}
+
+.saved-plan-day-title > span {
+  min-width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: #f3eeff;
+  color: #8E73A8;
+  font-size: .78rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.saved-plan-meals {
+  display: flex;
+  flex-direction: column;
+}
+
+.saved-plan-meal {
+  padding: 13px 15px;
+  border-bottom: 1px solid #f4f4f8;
+}
+
+.saved-plan-meal:last-child {
+  border-bottom: none;
+}
+
+.saved-plan-meal-title {
+  font-size: .82rem;
+  font-weight: 900;
+  color: #8E73A8;
+  margin-bottom: 8px;
+}
+
+.saved-plan-foods {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.saved-plan-food {
+  padding: 9px 10px;
+  border-radius: 12px;
+  background: #fafafa;
+  border: 1px solid #f1f1f6;
+}
+
+.saved-plan-food strong {
+  display: block;
+  font-size: .84rem;
+  color: #0f1923;
+  font-weight: 850;
+}
+
+.saved-plan-food p {
+  margin-top: 3px;
+  font-size: .74rem;
+  color: #6b7280;
+  line-height: 1.38;
+}
+
+.saved-plan-empty-meal {
+  font-size: .76rem;
+  color: #b0b8cc;
+  font-style: italic;
+  margin: 0;
+}
+
+.plan-detail-footer {
+  padding: 1rem 1.3rem;
+  border-top: 1px solid #f0f0f5;
+  background: #fff;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 760px) {
+  .plan-detail-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .plan-detail-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .saved-plan-day-title {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .plan-detail-footer {
+    flex-direction: column;
+  }
+
+  .plan-detail-footer .btn-secondary,
+  .plan-detail-footer .btn-appt {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+.document-actions,
+.meal-plan-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.delete-mini-btn {
+  border: 1.5px solid #fecaca;
+  background: #fff1f1;
+  color: #dc2626;
+  border-radius: 999px;
+  padding: 7px 11px;
+  font-size: .74rem;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: inherit;
+  transition: .2s ease;
+}
+
+.delete-mini-btn:hover {
+  background: #fee2e2;
+  border-color: #ef4444;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 560px) {
+  .document-actions,
+  .meal-plan-actions {
+    align-items: flex-end;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .delete-mini-btn {
+    padding: 6px 10px;
+  }
+}
+
+.delete-modal {
+  max-width: 380px;
+  padding: 1.8rem;
+  text-align: center;
+}
+
+.delete-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  background: #fff1f1;
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  margin: 0 auto 1rem;
+}
+
+.delete-title {
+  font-size: 1.15rem;
+  font-weight: 850;
+  color: #0f1923;
+  margin: 0;
+}
+
+.delete-sub {
+  margin: .55rem 0 1.3rem;
+  font-size: .88rem;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.delete-sub strong {
+  color: #0f1923;
+  font-weight: 850;
+}
+
+.delete-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 10px;
+  background: #ef4444;
+  color: #fff;
+  font-size: .86rem;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: inherit;
+  transition: .2s ease;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #dc2626;
+  transform: translateY(-1px);
+}
+
+.btn-danger:disabled,
+.btn-secondary:disabled {
+  opacity: .65;
+  cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+  .delete-actions {
+    flex-direction: column;
+  }
+
+  .delete-actions .btn-secondary,
+  .delete-actions .btn-danger {
+    width: 100%;
   }
 }
 </style>

@@ -5,6 +5,7 @@
     <main class="app-main">
       <RouterView />
     </main>
+    <ToastContainer />
   </div>
 </template>
 

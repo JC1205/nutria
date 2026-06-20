@@ -629,7 +629,7 @@ function goToRegister() {
   font-size: 1rem;
   font-weight: 500;
   color: #fff;
-  background-color: #8E73A8;
+  background-color: #3E9B92;
   border: none;
   border-radius: 12px;
   cursor: pointer;

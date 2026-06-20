@@ -10,6 +10,7 @@ import AppointmentsPage from '@/pages/AppointmentsPage.vue'
 import FoodEquivalentsPage from '@/pages/FoodEquivalentsPage.vue'
 import RecipesPage from '@/pages/RecipesPage.vue'
 import MealPlansPage from '@/pages/MealPlansPage.vue'
+import DocumentsPage from '@/pages/DocumentsPage.vue'
 
 const PlaceholderPage = {
   template: '<main style="padding: 32px;"><h1 style="font-size: 28px; font-weight: 700;">Página en construcción</h1></main>',
@@ -75,7 +76,7 @@ const router = createRouter({
         {
           path: 'documents',
           name: 'documents',
-          component: PlaceholderPage,
+          component: DocumentsPage,
         },
         {
           path: 'settings',

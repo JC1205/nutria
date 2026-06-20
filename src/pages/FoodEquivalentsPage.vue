@@ -660,7 +660,7 @@ function isValidColor(value: string | null) {
 }
 
 function getGroupColor(value: string | null): string {
-  return isValidColor(value) ? value as string : '#8E73A8'
+  return isValidColor(value) ? value as string : '#3E9B92 '
 }
 
 async function loadFoodGroups() {
@@ -898,7 +898,7 @@ const groupModal = reactive({
 
 const gf = reactive({
   name: '',
-  color: '#8E73A8',
+  color: '#3E9B92 ',
 })
 
 const ge = reactive({
@@ -907,7 +907,7 @@ const ge = reactive({
 
 function openGroupModal() {
   gf.name = ''
-  gf.color = '#8E73A8'
+  gf.color = '#3E9B92 '
   ge.name = ''
   groupModal.open = true
 }
@@ -1101,10 +1101,10 @@ onMounted(async () => {
   background: #fafafe;
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  color: #8E73A8;
+  color: #3E9B92 ;
   transition: .2s;
 }
-.btn-new-group:hover { background: #f3eeff; border-color: #cbb8e8; }
+.btn-new-group:hover { background: #e6f8f6; border-color: #cbb8e8; }
 
 
 .groups-actions {
@@ -1150,10 +1150,10 @@ onMounted(async () => {
   transition: background .15s, color .15s;
   text-align: left;
 }
-.group-item:hover:not(.active) { background: #f7f4ff; color: #8E73A8; }
+.group-item:hover:not(.active) { background: #f1fbfa; color: #3E9B92 ; }
 .group-item.active {
-  background: linear-gradient(135deg, #f3eeff, #ede6ff);
-  color: #8E73A8;
+  background: linear-gradient(135deg, #f1fbfa, #f1fbfa);
+  color: #3E9B92 ;
   font-weight: 700;
 }
 
@@ -1163,7 +1163,7 @@ onMounted(async () => {
   font-size: .72rem;
   font-weight: 700;
   background: rgba(142,115,168,.12);
-  color: #8E73A8;
+  color: #3E9B92 ;
   padding: 2px 7px;
   border-radius: 20px;
   flex-shrink: 0;
@@ -1179,7 +1179,7 @@ onMounted(async () => {
 }
 
 .group-item.active {
-  background: color-mix(in srgb, var(--group-color, #8E73A8) 12%, white);
+  background: color-mix(in srgb, var(--group-color, #3E9B92 ) 12%, white);
   color: #374151;
   font-weight: 700;
 }
@@ -1222,7 +1222,7 @@ onMounted(async () => {
   transition: .2s;
   min-width: 200px;
 }
-.search-box.focused { border-color: #8E73A8; box-shadow: 0 0 0 4px rgba(142,115,168,.1); }
+.search-box.focused { border-color: #3E9B92 ; box-shadow: 0 0 0 4px rgba(142,115,168,.1); }
 .search-ico { color: #9ca3af; flex-shrink: 0; }
 .search-box input {
   border: none; outline: none;
@@ -1239,13 +1239,13 @@ onMounted(async () => {
 .btn-add-food {
   display: flex; align-items: center; gap: 7px;
   padding: 9px 16px;
-  background: #8E73A8; color: #fff;
+  background: #3E9B92 ; color: #fff;
   border: none; border-radius: 11px;
   font-size: .86rem; font-weight: 600;
   cursor: pointer; font-family: inherit;
   white-space: nowrap;
 }
-.btn-add-food:hover { background: #7a5f97; transform: translateY(-1px);  transition: .2s; box-shadow: 0 3px 12px rgba(142,115,168,.3); }
+.btn-add-food:hover { background: #357d76; transform: translateY(-1px);  transition: .2s; box-shadow: 0 3px 12px rgba(164, 163, 164, 0.3); }
 .btn-add-food.small { padding: 7px 14px; font-size: .8rem; margin-top: 6px; }
 
 /* ══════════════════════════════════════════════════════════
@@ -1288,7 +1288,7 @@ onMounted(async () => {
   transition: background .12s;
   animation: rowIn .3s ease var(--delay, 0ms) both;
 }
-.food-row:hover { background: #faf8ff; }
+.food-row:hover { background: #f1fbfa; }
 .food-row:hover .row-acts { opacity: 1; }
 
 .food-table td {
@@ -1306,7 +1306,7 @@ onMounted(async () => {
   z-index: 2;
   box-shadow: 2px 0 8px rgba(0,0,0,.04);
 }
-.food-row:hover .td-sticky { background: #faf8ff; }
+.food-row:hover .td-sticky { background: #f1fbfa; }
 
 .td-name  { font-weight: 700; color: #0f1923; min-width: 160px; }
 .td-unit  { color: #6b7280; }
@@ -1345,7 +1345,7 @@ onMounted(async () => {
   display: flex; align-items: center; justify-content: center;
   color: #9ca3af; transition: .15s;
 }
-.act-btn:hover        { background: #f3eeff; color: #8E73A8; }
+.act-btn:hover        { background: #e6f8f6; color: #3E9B92 ; }
 .act-btn.danger:hover { background: #fff1f1; color: #ef4444; }
 
 /* Empty */
@@ -1368,8 +1368,8 @@ onMounted(async () => {
   display: flex; align-items: center; justify-content: center;
   font-family: inherit; transition: .2s;
 }
-.pg-btn:hover:not(:disabled):not(.active) { border-color: #8E73A8; color: #8E73A8; }
-.pg-btn.active { background: #8E73A8; border-color: #8E73A8; color: #fff; font-weight: 700; }
+.pg-btn:hover:not(:disabled):not(.active) { border-color: #3E9B92 ; color: #3E9B92 ; }
+.pg-btn.active { background: #3E9B92 ; border-color: #3E9B92 ; color: #fff; font-weight: 700; }
 .pg-btn:disabled { opacity: .4; cursor: not-allowed; }
 
 /* No grupo */
@@ -1449,7 +1449,7 @@ onMounted(async () => {
 .modal-title-group { display: flex; align-items: center; gap: 11px; }
 .modal-icon-box {
   width: 40px; height: 40px; border-radius: 11px;
-  background: #f3eeff; color: #8E73A8;
+  background: #e6f8f6; color: #3E9B92 ;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .modal-title { font-size: 1rem; font-weight: 600; color: #0f1923; margin-bottom: 0;}
@@ -1488,7 +1488,7 @@ onMounted(async () => {
   outline: none; font-family: inherit; transition: .2s;
 }
 .ff input:focus, .ff select:focus {
-  border-color: #8E73A8; background: #fff;
+  border-color: #3E9B92 ; background: #fff;
   box-shadow: 0 0 0 3px rgba(142,115,168,.1);
 }
 .ff input.err { border-color: #ef4444; }
@@ -1511,12 +1511,12 @@ onMounted(async () => {
 
 .btn-pri {
   display: flex; align-items: center; gap: 6px;
-  padding: 9px 18px; background: #8E73A8; color: #fff;
+  padding: 9px 18px; background: #3E9B92 ; color: #fff;
   border: none; border-radius: 9px; font-size: .86rem; font-weight: 600;
   cursor: pointer; font-family: inherit; transition: .2s;
   box-shadow: 0 3px 10px rgba(142,115,168,.3);
 }
-.btn-pri:hover:not(:disabled) { background: #7a5f97; }
+.btn-pri:hover:not(:disabled) { background: #357d76; }
 .btn-pri:disabled { opacity: .6; cursor: not-allowed; }
 
 .btn-danger {
@@ -1612,8 +1612,8 @@ onMounted(async () => {
 }
 
 .portion-value:hover {
-  background: #f3eeff;
-  color: #8E73A8;
+  background: #e6f8f6;
+  color: #3E9B92 ;
 }
 
 .portion-input {

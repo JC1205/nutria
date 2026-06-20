@@ -9,7 +9,7 @@
       <!-- ── Header ──────────────────────────────────────────── -->
       <div class="page-header">
         <div>
-          <h1 class="page-title">Constructor de plan alimenticio</h1>
+          <h1>{{ editingMode ? 'Editar plan alimenticio' : 'Constructor de plan alimenticio' }}</h1>
           <p class="page-subtitle">
             Paciente: <strong>{{ selectedPatient || 'Sin seleccionar' }}</strong>
             <span v-if="selectedPatient"> · Semana del {{ weekRangeLabel }}</span>
@@ -25,10 +25,10 @@
   </button>
 
   <button class="btn-save" @click="savePlan" :disabled="saving">
-    <span v-if="saving" class="spinner-sm" />
-    <Save v-else :size="16" />
-    Guardar plan
-  </button>
+  <span v-if="saving" class="spinner-sm" />
+  <Save v-else :size="16" />
+  {{ editingMode ? 'Actualizar plan' : 'Guardar plan' }}
+</button>
 </div>
       </div>
 
@@ -658,20 +658,30 @@
         </div>
 
         <div class="modal-footer pdf-actions">
-          <button class="btn-secondary" @click="pdfPreviewModal.open = false">
-            Cerrar
-          </button>
+  <button class="btn-secondary" @click="pdfPreviewModal.open = false">
+    Cerrar
+  </button>
 
-          <button
-            class="btn-save"
-            @click="downloadPlanPDF"
-            :disabled="generatingPdf"
-          >
-            <span v-if="generatingPdf" class="spinner-sm" />
-            <Printer v-else :size="15" />
-            Descargar PDF
-          </button>
-        </div>
+  <button
+    class="btn-save"
+    @click="savePlanPDFDocument"
+    :disabled="savingPdfDocument"
+  >
+    <span v-if="savingPdfDocument" class="spinner-sm" />
+    <Save v-else :size="15" />
+    Guardar documento
+  </button>
+
+  <button
+    class="btn-save"
+    @click="downloadPlanPDF"
+    :disabled="generatingPdf"
+  >
+    <span v-if="generatingPdf" class="spinner-sm" />
+    <Printer v-else :size="15" />
+    Descargar PDF
+  </button>
+</div>
       </div>
     </Transition>
   </div>
@@ -681,7 +691,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { computed, onMounted, reactive, ref, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import MealPlanPdfPreview from '@/components/MealPlanPdfPreview.vue'
 import {
@@ -828,6 +838,8 @@ const route = useRoute()
 const mounted = ref(false)
 const saving = ref(false)
 const pageError = ref('')
+const savedMealPlanId = ref<string | null>(null)
+const savingPdfDocument = ref(false)
 
 const patientOptions = ref<PatientOption[]>([])
 const patientList = ref<string[]>([])
@@ -840,6 +852,9 @@ const activeDayIndex = ref(0)
 const startDate = ref(new Date().toISOString().slice(0, 10))
 
 const caloricTarget = ref(1800)
+
+const editingMealPlanId = ref<string | null>(null)
+const editingMode = computed(() => !!editingMealPlanId.value)
 
 const macroTargets = computed(() => {
   const calories = caloricTarget.value || 1800
@@ -1040,6 +1055,141 @@ const weekRangeLabel = computed(() => {
 
   return `${first.dateLabel} – ${last.dateLabel}, ${year}`
 })
+
+
+function mealIdFromSupabase(type: string) {
+  const map: Record<string, string> = {
+    desayuno: 'breakfast',
+    colacion_manana: 'am-snack',
+    comida: 'lunch',
+    colacion_tarde: 'pm-snack',
+    cena: 'dinner',
+  }
+
+  return map[type] ?? 'lunch'
+}
+
+function parseNumberFromText(text: string, fallback = 0) {
+  const match = text.match(/[\d.]+/)
+
+  return match ? Number(match[0]) : fallback
+}
+
+function planFoodFromPortionNote(item: {
+  id: string
+  recipe_id: string | null
+  portion_notes: string | null
+}): PlanFood {
+  const note = item.portion_notes ?? ''
+  const parts = note.split('|').map((part) => part.trim())
+
+  const name = parts[0] || 'Alimento sin nombre'
+  const portion = parts[1] || '1 porción'
+  const kcalText = parts.find((part) => part.includes('kcal')) ?? ''
+  const proteinText = parts.find((part) => part.startsWith('P ')) ?? ''
+  const carbsText = parts.find((part) => part.startsWith('C ')) ?? ''
+  const fatText = parts.find((part) => part.startsWith('G ')) ?? ''
+  const ingredientsText = parts.find((part) => part.startsWith('Ingredientes:'))
+
+  const quantity = parseNumberFromText(portion, 1)
+  const unit = item.recipe_id ? 'receta' : portion.replace(String(quantity), '').trim() || 'porción'
+
+  const adjustedIngredients = ingredientsText
+    ? ingredientsText
+        .replace('Ingredientes:', '')
+        .split(';')
+        .map((ingredient) => ingredient.trim())
+        .filter(Boolean)
+    : []
+
+  return {
+    id: item.recipe_id ?? item.id,
+    group: item.recipe_id ? 'recipe' : 'guardado',
+    name,
+    quantity,
+    unit,
+    weightG: 0,
+    energyKcal: parseNumberFromText(kcalText, 0),
+    proteinG: parseNumberFromText(proteinText, 0),
+    carbsG: parseNumberFromText(carbsText, 0),
+    lipidsG: parseNumberFromText(fatText, 0),
+    source: item.recipe_id ? 'recipe' : 'food',
+    recipeId: item.recipe_id ?? undefined,
+    recipeName: item.recipe_id ? name : undefined,
+    adjustedIngredients,
+    uid: `saved-${item.id}`,
+  }
+}
+
+async function loadMealPlanForEdit(mealPlanId: string) {
+  const user = await ensureUser()
+
+  if (!user) {
+    pageError.value = 'No hay una sesión activa.'
+    return
+  }
+
+  pageError.value = ''
+
+  const { data: plan, error: planError } = await supabase
+    .from('meal_plans')
+    .select('id, patient_id, title, duration_days, start_date, notes')
+    .eq('id', mealPlanId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (planError) {
+    pageError.value = planError.message
+    return
+  }
+
+  const { data: items, error: itemsError } = await supabase
+    .from('meal_plan_items')
+    .select('id, recipe_id, day_number, meal_type, portion_notes, order_index')
+    .eq('meal_plan_id', mealPlanId)
+    .order('day_number', { ascending: true })
+    .order('order_index', { ascending: true })
+
+  if (itemsError) {
+    pageError.value = itemsError.message
+    return
+  }
+
+  editingMealPlanId.value = plan.id
+  savedMealPlanId.value = plan.id
+
+  duration.value = plan.duration_days
+  startDate.value = plan.start_date ?? startDate.value
+
+  const patientFromPlan = patientOptions.value.find((patient) => patient.id === plan.patient_id)
+
+  if (patientFromPlan) {
+    selectedPatient.value = patientFromPlan.full_name
+    updatePatientTargets()
+  }
+
+  days.value = buildDays(duration.value)
+
+  ;(items ?? []).forEach((item) => {
+    const day = days.value[item.day_number - 1]
+    if (!day) return
+
+    const mealId = mealIdFromSupabase(item.meal_type)
+    const meal = day.meals.find((m) => m.id === mealId)
+
+    if (!meal) return
+
+    meal.foods.push(
+      planFoodFromPortionNote({
+        id: item.id,
+        recipe_id: item.recipe_id,
+        portion_notes: item.portion_notes,
+      }),
+    )
+  })
+
+  activeDayIndex.value = 0
+}
 
 /* ─────────────────────────────────────────────────────────
    TOTALES NUTRICIONALES
@@ -1479,25 +1629,61 @@ async function savePlan() {
   pageError.value = ''
 
   try {
-    const { data: mealPlan, error: mealPlanError } = await supabase
-      .from('meal_plans')
-      .insert({
-        user_id: user.id,
-        patient_id: selectedPatientId.value,
-        title: `Plan alimenticio - ${selectedPatient.value}`,
-        duration_days: duration.value,
-        start_date: startDate.value,
-        notes: `Meta calórica diaria: ${caloricTarget.value} kcal`,
-      })
-      .select('id')
-      .single()
+    let mealPlanId = editingMealPlanId.value
 
-    if (mealPlanError) throw mealPlanError
+    if (editingMealPlanId.value) {
+      const { error: updateError } = await supabase
+        .from('meal_plans')
+        .update({
+          patient_id: selectedPatientId.value,
+          title: `Plan alimenticio - ${selectedPatient.value}`,
+          duration_days: duration.value,
+          start_date: startDate.value,
+          notes: `Meta calórica diaria: ${caloricTarget.value} kcal`,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', editingMealPlanId.value)
+        .eq('user_id', user.id)
+
+      if (updateError) throw updateError
+
+      const { error: deleteItemsError } = await supabase
+        .from('meal_plan_items')
+        .delete()
+        .eq('meal_plan_id', editingMealPlanId.value)
+
+      if (deleteItemsError) throw deleteItemsError
+    } else {
+      const { data: mealPlan, error: mealPlanError } = await supabase
+        .from('meal_plans')
+        .insert({
+          user_id: user.id,
+          patient_id: selectedPatientId.value,
+          title: `Plan alimenticio - ${selectedPatient.value}`,
+          duration_days: duration.value,
+          start_date: startDate.value,
+          notes: `Meta calórica diaria: ${caloricTarget.value} kcal`,
+        })
+        .select('id')
+        .single()
+
+      if (mealPlanError) throw mealPlanError
+
+      mealPlanId = mealPlan.id
+      editingMealPlanId.value = mealPlan.id
+      savedMealPlanId.value = mealPlan.id
+    }
+
+    if (!mealPlanId) {
+      throw new Error('No se pudo obtener el ID del plan.')
+    }
+
+    savedMealPlanId.value = mealPlanId
 
     const items = days.value.flatMap((day, dayIndex) =>
       day.meals.flatMap((meal) =>
         meal.foods.map((food, foodIndex) => ({
-          meal_plan_id: mealPlan.id,
+          meal_plan_id: mealPlanId,
           recipe_id: food.source === 'recipe' ? food.recipeId ?? null : null,
           day_number: dayIndex + 1,
           meal_type: mealTypeForSupabase(meal.id),
@@ -1573,11 +1759,145 @@ const filename = `plan-alimenticio-${patientName}.pdf`
   }
 }
 
+async function generatePlanPDFBlob() {
+  if (!pdfContentRef.value) {
+    pdfPreviewModal.open = true
+    await nextTick()
+  }
+
+  if (!pdfContentRef.value) {
+    throw new Error('No se encontró el contenido del PDF.')
+  }
+
+  const html2pdfModule = await import('html2pdf.js')
+  const html2pdf = html2pdfModule.default
+
+  const blob = await html2pdf()
+    .set({
+      margin: [6, 6, 6, 6],
+      image: {
+        type: 'jpeg',
+        quality: 0.98,
+      },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        scrollX: 0,
+        scrollY: 0,
+      },
+      jsPDF: {
+        unit: 'mm',
+        format: 'a4',
+        orientation: 'portrait',
+      },
+    })
+    .from(pdfContentRef.value)
+    .outputPdf('blob')
+
+  return blob as Blob
+}
+
+async function savePlanPDFDocument() {
+  const user = await ensureUser()
+
+  if (!user) {
+    pageError.value = 'No hay una sesión activa.'
+    return
+  }
+
+  if (!selectedPatientId.value) {
+    pageError.value = 'Selecciona un paciente antes de guardar el documento.'
+    return
+  }
+
+  savingPdfDocument.value = true
+  pageError.value = ''
+
+  try {
+    if (!savedMealPlanId.value) {
+      await savePlan()
+    }
+
+    if (!savedMealPlanId.value) {
+      throw new Error('Primero guarda el plan antes de guardar el documento.')
+    }
+
+    pdfPreviewModal.open = true
+    await nextTick()
+
+    const pdfBlob = await generatePlanPDFBlob()
+
+    const patientName = selectedPatient.value || 'paciente'
+
+    const cleanPatientName = patientName
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
+
+    const fileName = `plan-alimenticio-${cleanPatientName}-${Date.now()}.pdf`
+
+    const filePath = `${user.id}/meal-plans/${savedMealPlanId.value}/${fileName}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('nutria-files')
+      .upload(filePath, pdfBlob, {
+        contentType: 'application/pdf',
+        upsert: true,
+      })
+
+    if (uploadError) throw uploadError
+
+    const fileSizeKb = Number((pdfBlob.size / 1024).toFixed(2))
+
+    console.log('Guardando documento con:', {
+  user_id: user.id,
+  patient_id: selectedPatientId.value,
+  meal_plan_id: savedMealPlanId.value,
+  fileName,
+  filePath,
+  fileSizeKb,
+})
+
+    const { error: documentError } = await supabase
+      .from('documents')
+      .insert({
+        user_id: user.id,
+        patient_id: selectedPatientId.value,
+        meal_plan_id: savedMealPlanId.value,
+        name: fileName,
+        type: 'meal_plan_pdf',
+        file_url: null,
+        file_path: filePath,
+        file_size_kb: fileSizeKb,
+      })
+
+    if (documentError) throw documentError
+
+    pageError.value = ''
+    alert('Documento PDF guardado correctamente.')
+  } catch (err) {
+    pageError.value =
+      err instanceof Error
+        ? err.message
+        : 'No se pudo guardar el documento PDF.'
+  } finally {
+    savingPdfDocument.value = false
+  }
+}
+
 /* ─────────────────────────────────────────────────────────
    INICIO
 ───────────────────────────────────────────────────────── */
 onMounted(async () => {
   await Promise.all([loadPatients(), loadFoodData(), loadRecipes()])
+
+  const queryMealPlanId = route.query.mealPlanId
+
+  if (typeof queryMealPlanId === 'string') {
+    await loadMealPlanForEdit(queryMealPlanId)
+  }
 
   setTimeout(() => {
     mounted.value = true
@@ -1634,7 +1954,7 @@ onMounted(async () => {
   border-radius: 11px; font-size: .86rem; font-weight: 600;
   color: #374151; cursor: pointer; font-family: inherit; transition: .2s;
 }
-.btn-outline:hover { border-color: #8E73A8; color: #8E73A8; }
+.btn-outline:hover { border-color: #3E9B92; color: #3E9B92; }
 
 .btn-save {
   display: flex; align-items: center; gap: 7px;
@@ -1682,7 +2002,7 @@ onMounted(async () => {
   min-width: 200px;
   transition: .2s;
 }
-.select-wrapper select:focus { border-color: #8E73A8; background: #fff; box-shadow: 0 0 0 3px rgba(142,115,168,.1); }
+.select-wrapper select:focus { border-color: #3E9B92; background: #fff; box-shadow: 0 0 0 3px rgba(142,115,168,.1); }
 .select-arrow { position: absolute; right: 11px; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none; }
 
 .duration-toggle { display: flex; gap: 4px; background: #f3f4f6; padding: 3px; border-radius: 11px; }
@@ -1694,7 +2014,7 @@ onMounted(async () => {
   color: #6b7280; cursor: pointer; font-family: inherit; transition: .2s;
 }
 .duration-btn:hover:not(.active) { color: #374151; }
-.duration-btn.active { background: #8E73A8; color: #fff; box-shadow: 0 2px 8px rgba(142,115,168,.3); }
+.duration-btn.active { background: #3E9B92; color: #fff; box-shadow: 0 2px 8px rgba(142,115,168,.3); }
 
 /* Day tabs */
 .day-tabs {
@@ -1718,8 +2038,8 @@ onMounted(async () => {
   margin-bottom: 18px;
 
 }
-.day-tab:hover:not(.active) { border-color: #cbb8e8; }
-.day-tab.active { background: #8E73A8; border-color: #8E73A8; }
+.day-tab:hover:not(.active) { border-color: #81b8b3; }
+.day-tab.active { background: #3E9B92; border-color: #3E9B92; }
 .day-tab-name { font-size: .74rem; font-weight: 700; color: #374151; }
 .day-tab.active .day-tab-name { color: #fff; }
 .day-tab-date { font-size: .66rem; color: #9ca3af; margin-top: 1px; }
@@ -1768,13 +2088,13 @@ onMounted(async () => {
 .btn-add-food {
   display: flex; align-items: center; gap: 6px;
   padding: 7px 14px;
-  background: #f3eeff; color: #8E73A8;
+  background: #e6f8f6; color: #3E9B92;
   border: none; border-radius: 9px;
   font-size: .82rem; font-weight: 600;
   cursor: pointer; font-family: inherit; transition: .2s;
   white-space: nowrap;
 }
-.btn-add-food:hover { background: #ede2fc; }
+.btn-add-food:hover { background: #e6f8f6; }
 
 /* Drop zone */
 .drop-zone {
@@ -1787,7 +2107,7 @@ onMounted(async () => {
   cursor: pointer;
   transition: .2s;
 }
-.drop-zone:hover { border-color: #8E73A8; color: #8E73A8; background: #faf8ff; }
+.drop-zone:hover { border-color: #3E9B92; color: #3E9B92; background: #f1fbfa; }
 
 /* Food rows */
 .meal-foods { display: flex; flex-direction: column; gap: 6px; }
@@ -1895,7 +2215,7 @@ onMounted(async () => {
   border-radius: 9px;
   transition: background .15s;
 }
-.by-meal-item:hover { background: #faf8ff; }
+.by-meal-item:hover { background: #f1fbfa; }
 .bm-icon-box {
   width: 26px; height: 26px; border-radius: 8px;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
@@ -1932,7 +2252,7 @@ onMounted(async () => {
 .modal-title-group { display: flex; align-items: center; gap: 11px; }
 .modal-icon-box {
   width: 40px; height: 40px; border-radius: 11px;
-  background: #f3eeff; color: #8E73A8;
+  background: #e6f8f6; color: #3E9B92;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .modal-title { font-size: 1rem; font-weight: 700; color: #0f1923; }
@@ -1953,7 +2273,7 @@ onMounted(async () => {
   margin-bottom: .9rem;
   transition: .2s;
 }
-.picker-search:focus-within { border-color: #8E73A8; box-shadow: 0 0 0 3px rgba(142,115,168,.1); }
+.picker-search:focus-within { border-color: #3E9B92; box-shadow: 0 0 0 3px rgba(142,115,168,.1); }
 .ps-ico { color: #9ca3af; flex-shrink: 0; }
 .picker-search input { flex: 1; border: none; outline: none; font-size: .87rem; font-family: inherit; background: transparent; }
 
@@ -1965,8 +2285,8 @@ onMounted(async () => {
   font-size: .78rem; font-weight: 600; color: #6b7280;
   cursor: pointer; font-family: inherit; transition: .15s;
 }
-.pg-pill:hover { border-color: #8E73A8; color: #8E73A8; }
-.pg-pill.active { background: #8E73A8; border-color: #8E73A8; color: #fff; }
+.pg-pill:hover { border-color: #3E9B92; color: #3E9B92; }
+.pg-pill.active { background: #3E9B92; border-color: #3E9B92; color: #fff; }
 
 .picker-results { display: flex; flex-direction: column; gap: 6px; max-height: 280px; overflow-y: auto; }
 
@@ -1982,7 +2302,7 @@ onMounted(async () => {
   transition: .15s;
   text-align: left;
 }
-.picker-food-item:hover { background: #f7f4ff; border-color: #e4d9f7; }
+.picker-food-item:hover { background: #f0fdfb; border-color: #dbfaf6; }
 
 .pf-info { flex: 1; display: flex; flex-direction: column; }
 .pf-name { font-size: .87rem; font-weight: 600; color: #0f1923; }
@@ -2000,8 +2320,8 @@ onMounted(async () => {
 .quantity-step {
   margin-top: 1rem;
   padding: 1rem;
-  background: #faf8ff;
-  border: 1px solid #ede2fc;
+  background: #f1fbfa;
+  border: 1px solid #e6f8f6;
   border-radius: 13px;
 }
 .qs-food-name { font-size: .92rem; font-weight: 700; color: #0f1923; margin-bottom: .7rem; }
@@ -2014,7 +2334,7 @@ onMounted(async () => {
   font-size: .85rem; color: #0f1923; background: #fff;
   outline: none; font-family: inherit; transition: .2s;
 }
-.ff input:focus { border-color: #8E73A8; box-shadow: 0 0 0 3px rgba(142,115,168,.1); }
+.ff input:focus { border-color: #3E9B92; box-shadow: 0 0 0 3px rgba(142,115,168,.1); }
 .ff input:disabled { background: #f3f4f6; color: #9ca3af; }
 
 .qs-preview { font-size: .78rem; color: #6b7280; margin-bottom: .8rem; line-height: 1.5; }
@@ -2030,11 +2350,11 @@ onMounted(async () => {
 
 .btn-primary {
   display: flex; align-items: center; gap: 6px;
-  padding: 8px 16px; background: #8E73A8; color: #fff;
+  padding: 8px 16px; background: #3E9B92; color: #fff;
   border: none; border-radius: 9px; font-size: .82rem; font-weight: 600;
   cursor: pointer; font-family: inherit; transition: .2s;
 }
-.btn-primary:hover { background: #7a5f97; }
+.btn-primary:hover { background: #357d76; }
 
 .spinner-sm {
   width: 14px; height: 14px;
@@ -2110,14 +2430,14 @@ onMounted(async () => {
 }
 
 .source-tab:hover {
-  border-color: #8E73A8;
-  color: #8E73A8;
-  background: #faf8ff;
+  border-color: #3E9B92;
+  color: #3E9B92;
+  background: #f1fbfa;
 }
 
 .source-tab.active {
-  background: #8E73A8;
-  border-color: #8E73A8;
+  background: #3E9B92;
+  border-color: #3E9B92;
   color: #fff;
   box-shadow: 0 4px 12px rgba(142,115,168,.25);
 }
@@ -2141,16 +2461,16 @@ onMounted(async () => {
 }
 
 .picker-recipe-item:hover {
-  background: #f7f4ff;
-  border-color: #e4d9f7;
+  background: #f0fdfb;
+  border-color: #dbfaf6;
 }
 
 .pr-thumb {
   width: 38px;
   height: 38px;
   border-radius: 10px;
-  background: #f3eeff;
-  color: #8E73A8;
+  background: #e6f8f6;
+  color: #3E9B92;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2173,7 +2493,7 @@ onMounted(async () => {
   gap: 5px;
   border: none;
   background: none;
-  color: #8E73A8;
+  color: #3E9B92;
   font-size: .78rem;
   font-weight: 700;
   cursor: pointer;
@@ -2184,7 +2504,7 @@ onMounted(async () => {
 }
 
 .back-link:hover {
-  color: #7a5f97;
+  color: #357d76;
   transform: translateX(-2px);
 }
 
@@ -2193,7 +2513,7 @@ onMounted(async () => {
 ══════════════════════════════════════════════════════════ */
 .recipe-step {
   background: #fff;
-  border: 1.5px solid #ede2fc;
+  border: 1.5px solid #e6f8f6;
 }
 
 .qs-recipe-hint {
@@ -2244,8 +2564,8 @@ onMounted(async () => {
   height: 26px;
   border: none;
   border-radius: 8px;
-  background: #f3eeff;
-  color: #8E73A8;
+  background: #e6f8f6;
+  color: #3E9B92;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2272,7 +2592,7 @@ onMounted(async () => {
 }
 
 .iq-input:focus {
-  border-color: #8E73A8;
+  border-color: #3E9B92;
   box-shadow: 0 0 0 3px rgba(142,115,168,.1);
 }
 
@@ -2328,8 +2648,8 @@ onMounted(async () => {
 }
 
 .iq-name:hover {
-  background: #f3eeff;
-  color: #8E73A8;
+  background: #e6f8f6;
+  color: #3E9B92;
 }
 
 .iq-help {
@@ -2341,7 +2661,7 @@ onMounted(async () => {
 .iq-edit-input {
   width: 100%;
   padding: 7px 9px;
-  border: 1.5px solid #8E73A8;
+  border: 1.5px solid #3E9B92;
   border-radius: 8px;
   font-size: .82rem;
   font-weight: 600;
@@ -2424,14 +2744,14 @@ onMounted(async () => {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  background: #f3eeff;
+  background: #e6f8f6;
   padding: .9rem 1rem;
 }
 
 .plan-detail-day-header h3 {
   font-size: .95rem;
   font-weight: 700;
-  color: #8E73A8;
+  color: #3E9B92;
 }
 
 .plan-detail-day-header p {
@@ -2617,7 +2937,7 @@ onMounted(async () => {
   justify-content: center;
   gap: 7px;
   padding: 10px 20px;
-  background: #8E73A8;
+  background: #3E9B92;
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -2682,7 +3002,7 @@ onMounted(async () => {
 }
 
 .date-input:focus {
-  border-color: #8E73A8;
+  border-color: #3E9B92;
   background: #fff;
   box-shadow: 0 0 0 3px rgba(142,115,168,.1);
 }
@@ -2718,7 +3038,7 @@ onMounted(async () => {
 }
 
 .meal-time-input:focus {
-  border-color: #8E73A8;
+  border-color: #3E9B92;
   background: #fff;
   color: #0f1923;
   box-shadow: 0 0 0 3px rgba(142,115,168,.1);
