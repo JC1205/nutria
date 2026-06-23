@@ -805,6 +805,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useToastStore } from '@/stores/toast.store'
 import {
   ArrowLeft,
   Pencil,
@@ -841,6 +842,8 @@ const loadingMealPlans = ref(false)
 const selectedMealPlan = ref<MealPlanRow | null>(null)
 const selectedMealPlanItems = ref<MealPlanItemRow[]>([])
 const loadingMealPlanDetail = ref(false)
+
+const toast = useToastStore()
 
 const mealPlanDetailModal = reactive({
   open: false,
@@ -1237,18 +1240,20 @@ async function loadDocuments() {
 
 async function openDocument(doc: DocumentRow) {
   if (!doc.file_path) {
-    pageError.value = 'Este documento no tiene archivo asociado.'
-    return
-  }
+  pageError.value = 'Este documento no tiene archivo asociado.'
+  toast.error(pageError.value)
+  return
+}
 
   const { data, error } = await supabase.storage
     .from('nutria-files')
     .createSignedUrl(doc.file_path, 60)
 
   if (error) {
-    pageError.value = error.message
-    return
-  }
+  pageError.value = error.message
+  toast.error(pageError.value)
+  return
+}
 
   window.open(data.signedUrl, '_blank')
 }
@@ -1294,11 +1299,15 @@ async function deleteDocument() {
 
     deleteDocumentModal.open = false
     deleteDocumentModal.document = null
+
+    toast.success('Documento eliminado correctamente.')
   } catch (err) {
     pageError.value =
       err instanceof Error
         ? err.message
         : 'No se pudo eliminar el documento.'
+
+    toast.error(pageError.value)
   } finally {
     deleteDocumentModal.deleting = false
   }
@@ -1367,11 +1376,15 @@ async function deleteMealPlan() {
 
     deleteMealPlanModal.open = false
     deleteMealPlanModal.plan = null
+
+    toast.success('Plan eliminado correctamente.')
   } catch (err) {
     pageError.value =
       err instanceof Error
         ? err.message
         : 'No se pudo eliminar el plan.'
+
+        toast.error(pageError.value)
   } finally {
     deleteMealPlanModal.deleting = false
   }
@@ -1763,7 +1776,7 @@ onMounted(async () => {
   gap: 4px;
   border-bottom: 2px solid #f0f0f5;
   margin-bottom: 1.6rem;
-  overflow-x: auto;
+  flex-wrap: wrap;
   padding-bottom: 0;
 }
 

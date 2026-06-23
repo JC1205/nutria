@@ -63,9 +63,17 @@
     <div class="sidebar-footer">
       <div class="user-card" :class="{ collapsed: isCollapsed }">
         <div class="user-avatar">
-          <span>{{ userInitials }}</span>
-          <span class="avatar-status" />
-        </div>
+  <img
+    v-if="sidebarAvatarUrl"
+    :src="sidebarAvatarUrl"
+    alt="Foto de perfil"
+    class="user-avatar-img"
+  />
+
+  <span v-else>
+    {{ userInitials }}
+  </span>
+</div>
         <Transition name="fade-text">
           <div v-if="!isCollapsed" class="user-info">
             <p class="user-name">{{ userName }}</p>
@@ -86,8 +94,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
+import { supabase } from '@/lib/supabase'
 import {
   LayoutDashboard,
   Users,
@@ -105,6 +114,7 @@ import { useAuthStore } from '@/stores/auth.store'
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
+const sidebarAvatarUrl = ref('')
 
 const isCollapsed = ref(false)
 
@@ -116,6 +126,46 @@ const userName = computed(() => {
 
   return fullName || 'Nutriólogo'
 })
+
+async function loadSidebarAvatar() {
+  const photoPath = auth.profile?.profile_photo_url
+
+  if (!photoPath) {
+    sidebarAvatarUrl.value = ''
+    return
+  }
+
+  if (photoPath.startsWith('http')) {
+    sidebarAvatarUrl.value = photoPath
+    return
+  }
+
+  const { data, error } = await supabase.storage
+    .from('nutria-files')
+    .createSignedUrl(photoPath, 60 * 60)
+
+  if (error) {
+    sidebarAvatarUrl.value = ''
+    return
+  }
+
+  sidebarAvatarUrl.value = data.signedUrl
+}
+
+onMounted(async () => {
+  if (!auth.profile) {
+    await auth.loadUser()
+  }
+
+  await loadSidebarAvatar()
+})
+
+watch(
+  () => auth.profile?.profile_photo_url,
+  async () => {
+    await loadSidebarAvatar()
+  },
+)
 
 const userRole = computed(() => {
   return auth.profile?.specialization || 'Nutriólogo'
@@ -367,18 +417,25 @@ async function handleSignOut() {
 .user-card.collapsed { padding: 8px; justify-content: center; }
 
 .user-avatar {
-  position: relative;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #3E9B92 0%, #3E9B92 100%);
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #3E9B92, #2d7a72);
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: .8rem;
-  font-weight: 700;
-  color: #fff;
+  font-size: .82rem;
+  font-weight: 800;
+  overflow: hidden;
   flex-shrink: 0;
+}
+
+.user-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .avatar-status {

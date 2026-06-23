@@ -425,6 +425,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useToastStore } from '@/stores/toast.store'
 import {
   Plus,
   Search,
@@ -547,6 +548,8 @@ const pageError = ref('')
 
 const selectedGroup = ref<FoodGroup | null>(null)
 const foodGroups = ref<FoodGroup[]>([])
+
+const toast = useToastStore()
 
 const colorOptions = [
   '#8E73A8',
@@ -881,6 +884,8 @@ async function saveFood() {
     }
 
     await loadFoodGroups()
+
+    toast.success('Alimento agregado correctamente.')
     foodModal.open = false
   } catch (err) {
     pageError.value = err instanceof Error ? err.message : 'No se pudo guardar el alimento.'
@@ -917,6 +922,7 @@ async function saveGroup() {
 
   if (!user) {
     pageError.value = 'No hay una sesión activa.'
+    toast.error(pageError.value)
     return
   }
 
@@ -943,6 +949,7 @@ async function saveGroup() {
 
   if (error) {
     pageError.value = error.message
+    toast.error(pageError.value)
     return
   }
 
@@ -955,6 +962,7 @@ async function saveGroup() {
   if (createdGroup) {
     selectGroup(createdGroup)
   }
+  toast.success('Grupo agregado correctamente.')
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -994,6 +1002,7 @@ async function doDeleteFood() {
   deleteFood.open = false
 
   await loadFoodGroups()
+  toast.success('Alimento eliminado correctamente.')
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -1040,6 +1049,8 @@ async function doDeleteGroup() {
   }
 
   await loadFoodGroups()
+
+  toast.success('Grupo eliminado correctamente.')
 }
 
 onMounted(async () => {

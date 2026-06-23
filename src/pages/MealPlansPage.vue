@@ -8,7 +8,7 @@
 
       <!-- ── Header ──────────────────────────────────────────── -->
       <div class="page-header">
-        <div>
+        <div >
           <h1>{{ editingMode ? 'Editar plan alimenticio' : 'Constructor de plan alimenticio' }}</h1>
           <p class="page-subtitle">
             Paciente: <strong>{{ selectedPatient || 'Sin seleccionar' }}</strong>
@@ -17,17 +17,17 @@
         </div>
         <div class="header-actions">
   <button class="btn-outline" @click="openPlanDetail">
-    <Search :size="16" /> Ver detalle del plan
+    <Search :size="16" /> Ver detalle
   </button>
 
   <button class="btn-outline" @click="previewPDF">
-    <Printer :size="16" /> Vista previa PDF
+    <Printer :size="16" /> Vista previa
   </button>
 
   <button class="btn-save" @click="savePlan" :disabled="saving">
   <span v-if="saving" class="spinner-sm" />
   <Save v-else :size="16" />
-  {{ editingMode ? 'Actualizar plan' : 'Guardar plan' }}
+  {{ editingMode ? 'Actualizar' : 'Guardar' }}
 </button>
 </div>
       </div>
@@ -694,6 +694,7 @@
 import { computed, onMounted, reactive, ref, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import MealPlanPdfPreview from '@/components/MealPlanPdfPreview.vue'
+import { useToastStore } from '@/stores/toast.store'
 import {
   Printer,
   Save,
@@ -855,6 +856,8 @@ const caloricTarget = ref(1800)
 
 const editingMealPlanId = ref<string | null>(null)
 const editingMode = computed(() => !!editingMealPlanId.value)
+
+const toast = useToastStore()
 
 const macroTargets = computed(() => {
   const calories = caloricTarget.value || 1800
@@ -1698,8 +1701,17 @@ async function savePlan() {
 
       if (itemsError) throw itemsError
     }
+
+    if (items.length > 0) {
+  const { error: itemsError } = await supabase.from('meal_plan_items').insert(items)
+
+  if (itemsError) throw itemsError
+}
+
+toast.success(editingMode.value ? 'Plan guardado correctamente.' : 'Plan guardado correctamente.')
   } catch (err) {
     pageError.value = err instanceof Error ? err.message : 'No se pudo guardar el plan.'
+    toast.error(pageError.value)
   } finally {
     saving.value = false
   }
@@ -1876,12 +1888,14 @@ async function savePlanPDFDocument() {
     if (documentError) throw documentError
 
     pageError.value = ''
-    alert('Documento PDF guardado correctamente.')
+    toast.success('PDF guardado como documento.')
   } catch (err) {
     pageError.value =
       err instanceof Error
         ? err.message
         : 'No se pudo guardar el documento PDF.'
+
+    toast.success('PDF guardado como documento.')
   } finally {
     savingPdfDocument.value = false
   }
@@ -1941,7 +1955,7 @@ onMounted(async () => {
   gap: 10px;
   flex-wrap: wrap;
 }
-.page-title    { font-size: 1.5rem; font-weight: 500; color: #0f1923; letter-spacing: -.4px; }
+.page-header h1   { font-size: 1.5rem; font-weight: 500; color: #0f1923; letter-spacing: -.4px; }
 .page-subtitle { font-size: .87rem; color: #9ca3af; margin-top: 4px; }
 .page-subtitle strong { color: #374151; }
 
@@ -2143,7 +2157,7 @@ onMounted(async () => {
    PANEL LATERAL — Resumen
 ══════════════════════════════════════════════════════════ */
 .summary-panel {
-  width: 300px;
+  width: 250px;
   flex-shrink: 0;
   position: sticky;
   top: 1.5rem;

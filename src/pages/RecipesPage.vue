@@ -348,6 +348,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useToastStore } from '@/stores/toast.store'
 import {
   Plus,
   Search,
@@ -434,6 +435,8 @@ const recipes = ref<Recipe[]>([])
 
 const categories = ['Todas', 'Desayuno', 'Comida', 'Cena', 'Snacks', 'Smoothies', 'Ensaladas']
 const emojiOptions = ['🥗', '🍲', '🥙', '🍛', '🍱', '🥞', '🍳', '🥤', '🍝', '🥘', '🍜', '🥪', '🍤', '🍣']
+
+const toast = useToastStore()
 
 async function ensureUser() {
   if (!auth.user) {
@@ -799,8 +802,11 @@ async function saveRecipe() {
     await loadRecipes()
 
     formModal.open = false
+
+toast.success(formModal.recipe ? 'Receta actualizada correctamente.' : 'Receta agregada correctamente.')
   } catch (err) {
     pageError.value = err instanceof Error ? err.message : 'No se pudo guardar la receta.'
+    toast.error(pageError.value)
   } finally {
     saving.value = false
   }
@@ -825,7 +831,11 @@ function askDelete(recipe: Recipe) {
 async function deleteRecipe() {
   const user = await ensureUser()
 
-  if (!deleteModal.recipe || !user) return
+  if (!deleteModal.recipe || !user) {
+    pageError.value = 'No hay una sesión activa.'
+    toast.error(pageError.value)
+    return
+  }
 
   const { error } = await supabase
     .from('recipes')
@@ -835,6 +845,7 @@ async function deleteRecipe() {
 
   if (error) {
     pageError.value = error.message
+    toast.error(pageError.value)
     return
   }
 
@@ -842,6 +853,8 @@ async function deleteRecipe() {
   deleteModal.recipe = null
 
   await loadRecipes()
+
+  toast.success('Receta eliminada correctamente.')
 }
 
 onMounted(async () => {

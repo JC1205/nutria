@@ -449,6 +449,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useToastStore } from '@/stores/toast.store'
 import {
   Plus,
   Search,
@@ -568,6 +569,7 @@ const PAGE_SIZE = 10
 const saving = ref(false)
 const loading = ref(false)
 const pageError = ref('')
+const toast = useToastStore()
 
 const filterOptions = [
   { value: 'all', label: 'Todos' },
@@ -932,6 +934,7 @@ async function savePatient() {
 
   saving.value = true
   pageError.value = ''
+  
 
 const payload = {
   user_id: auth.user.id,
@@ -973,12 +976,19 @@ const payload = {
         .eq('user_id', auth.user.id)
 
       if (error) throw error
+      
     }
 
     await loadPatients()
     closeModal()
+     toast.success(
+      modal.mode === 'create'
+        ? 'Paciente registrado correctamente.'
+        : 'Paciente actualizado correctamente.',
+    )
   } catch (err) {
     pageError.value = err instanceof Error ? err.message : 'No se pudo guardar el paciente.'
+    toast.error(pageError.value)
   } finally {
     saving.value = false
   }
@@ -1014,6 +1024,7 @@ async function deletePatient() {
 
   patients.value = patients.value.filter((patient) => patient.id !== deleteModal.patient?.id)
   deleteModal.open = false
+  toast.success('Paciente eliminado correctamente.')
 }
 
 onMounted(async () => {
@@ -1258,7 +1269,7 @@ watch(
   transition: background .15s;
   animation: rowIn .3s ease var(--delay, 0ms) both;
 }
-.patient-row:hover { background: #f2fdfc; }
+.patient-row:hover { background: #f6faf9; }
 .patient-row:hover .row-actions { opacity: 1; }
 
 .td {

@@ -281,6 +281,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useToastStore } from '@/stores/toast.store'
 import {
   Plus,
   ChevronLeft,
@@ -356,6 +357,8 @@ const selectedDate = ref(today.toISOString().slice(0, 10))
 const weekdays = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB']
 
 const patientList = ref<PatientOption[]>([])
+
+const toast = useToastStore()
 
 const statusOptions: { value: AppointmentStatus; label: string }[] = [
   { value: 'confirmed', label: 'Confirmada' },
@@ -741,8 +744,10 @@ async function saveAppointment() {
 
     await loadAppointments()
     closeModal()
+    toast.success('Cita agendada correctamente.')
   } catch (err) {
     pageError.value = err instanceof Error ? err.message : 'No se pudo guardar la cita.'
+    toast.error(pageError.value)
   } finally {
     saving.value = false
   }
@@ -785,6 +790,7 @@ async function deleteAppointment() {
   )
 
   deleteModal.open = false
+  toast.success('Cita eliminada correctamente.')
 }
 
 async function confirmAppt(appt: Appointment) {
