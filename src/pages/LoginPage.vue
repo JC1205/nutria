@@ -59,8 +59,8 @@
 
         <!-- Encabezado -->
         <div class="form-header">
-          <h1 class="form-title">Bienvenido!</h1>
-          <p class="form-subtitle">Inicia sesión en tu cuenta Nutría</p>
+          <h1 class="form-title">{{ formTitle }}</h1>
+          <p class="form-subtitle">{{ formSubtitle }}</p>
         </div>
 
         <!-- Mensaje de error global -->
@@ -70,8 +70,62 @@
           </div>
         </Transition>
 
+        <template v-if="isRegisterMode">
+  <div class="register-grid">
+    <div class="field-group" :class="{ focused: focus.firstName, error: errors.firstName }">
+      <label class="field-label">Nombre</label>
+      <div class="input-wrapper">
+        <input
+          v-model="form.firstName"
+          type="text"
+          placeholder="Ana"
+          class="field-input no-icon"
+          autocomplete="given-name"
+          @focus="focus.firstName = true"
+          @blur="focus.firstName = false; validateFirstName()"
+        />
+      </div>
+      <Transition name="slide-down">
+        <p v-if="errors.firstName" class="field-error">{{ errors.firstName }}</p>
+      </Transition>
+    </div>
+
+    <div class="field-group" :class="{ focused: focus.lastName, error: errors.lastName }">
+      <label class="field-label">Apellido</label>
+      <div class="input-wrapper">
+        <input
+          v-model="form.lastName"
+          type="text"
+          placeholder="Rivera"
+          class="field-input no-icon"
+          autocomplete="family-name"
+          @focus="focus.lastName = true"
+          @blur="focus.lastName = false; validateLastName()"
+        />
+      </div>
+      <Transition name="slide-down">
+        <p v-if="errors.lastName" class="field-error">{{ errors.lastName }}</p>
+      </Transition>
+    </div>
+  </div>
+
+  <div class="field-group" :class="{ focused: focus.specialization, error: errors.specialization }">
+    <label class="field-label">Especialización</label>
+    <div class="input-wrapper">
+      <input
+        v-model="form.specialization"
+        type="text"
+        placeholder="Nutrición clínica"
+        class="field-input no-icon"
+        @focus="focus.specialization = true"
+        @blur="focus.specialization = false"
+      />
+    </div>
+  </div>
+</template>
+
         <!-- Formulario -->
-        <form @submit.prevent="handleLogin" novalidate>
+        <form @submit.prevent="handleSubmit" novalidate>
 
           <!-- Email -->
           <div class="field-group" :class="{ focused: focus.email, error: errors.email }">
@@ -116,7 +170,7 @@
                 :type="showPassword ? 'text' : 'password'"
                 placeholder="••••••••"
                 class="field-input"
-                autocomplete="current-password"
+                :autocomplete="isRegisterMode ? 'new-password' : 'current-password'"
                 @focus="focus.password = true"
                 @blur="focus.password = false; validatePassword()"
               />
@@ -142,8 +196,58 @@
             </Transition>
           </div>
 
+          <div
+  v-if="isRegisterMode"
+  class="field-group"
+  :class="{ focused: focus.confirmPassword, error: errors.confirmPassword }"
+>
+  <label class="field-label">Confirmar contraseña</label>
+
+  <div class="input-wrapper">
+    <span class="input-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+    </span>
+
+    <input
+      v-model="form.confirmPassword"
+      :type="showConfirmPassword ? 'text' : 'password'"
+      placeholder="••••••••"
+      class="field-input"
+      autocomplete="new-password"
+      @focus="focus.confirmPassword = true"
+      @blur="focus.confirmPassword = false; validateConfirmPassword()"
+    />
+
+    <button
+      type="button"
+      class="eye-btn"
+      @click="showConfirmPassword = !showConfirmPassword"
+      :aria-label="showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+    >
+      <svg v-if="!showConfirmPassword" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+      <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+        <line x1="1" y1="1" x2="23" y2="23"/>
+      </svg>
+    </button>
+  </div>
+
+  <Transition name="slide-down">
+    <p v-if="errors.confirmPassword" class="field-error">
+      {{ errors.confirmPassword }}
+    </p>
+  </Transition>
+</div>
+
           <!-- Recordar sesión -->
-          <div class="remember-row">
+          <div v-if="!isRegisterMode" class="remember-row">
             <label class="checkbox-label">
               <input type="checkbox" v-model="form.remember" class="checkbox-input" />
               <span class="checkbox-custom"></span>
@@ -166,11 +270,12 @@
                 Acceso exitoso
               </span>
               <span v-else-if="isLoading" key="loading" class="btn-content">
-                <span class="spinner"></span>
-                Verificando...
-              </span>
-              <span v-else key="idle" class="btn-content">
-                Iniciar sesión
+  <span class="spinner"></span>
+  {{ submitText }}
+</span>
+
+<span v-else key="idle" class="btn-content">
+  {{ submitText }}
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="5" y1="12" x2="19" y2="12"/>
                   <polyline points="12 5 19 12 12 19"/>
@@ -183,10 +288,15 @@
         <!-- Footer del formulario -->
         <div class="form-footer">
           <div class="divider"><span>Plataforma segura</span></div>
-          <p class="register-link">
-            ¿Eres nuevo?
-            <a href="#" @click.prevent="goToRegister">Solicita tu cuenta</a>
-          </p>
+          <p v-if="!isRegisterMode" class="register-link">
+  ¿Eres nuevo?
+  <a href="#" @click.prevent="goToRegister">Crea tu cuenta</a>
+</p>
+
+<p v-else class="register-link">
+  ¿Ya tienes cuenta?
+  <a href="#" @click.prevent="goToLogin">Inicia sesión</a>
+</p>
         </div>
       </div>
     </div>
@@ -196,34 +306,70 @@
 
 <script setup lang="ts">
 import { Salad, TrendingUp } from 'lucide-vue-next'
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase'
+import { useAuthStore } from '@/stores/auth.store'
+import { useToastStore } from '@/stores/toast.store'
 
 const router = useRouter()
-import { useAuthStore } from '@/stores/auth.store'
 const auth = useAuthStore()
+const toast = useToastStore()
 
 const mounted = ref(false)
 const isLoading = ref(false)
 const loginSuccess = ref(false)
 const showPassword = ref(false)
+const showConfirmPassword = ref(false)
 const errorMsg = ref('')
 
+const authMode = ref<'login' | 'register'>('login')
+
+const isRegisterMode = computed(() => authMode.value === 'register')
+
 const form = reactive({
+  firstName: '',
+  lastName: '',
+  specialization: '',
   email: '',
   password: '',
+  confirmPassword: '',
   remember: false,
 })
 
 const errors = reactive({
+  firstName: '',
+  lastName: '',
+  specialization: '',
   email: '',
   password: '',
+  confirmPassword: '',
 })
 
 const focus = reactive({
+  firstName: false,
+  lastName: false,
+  specialization: false,
   email: false,
   password: false,
+  confirmPassword: false,
+})
+
+const formTitle = computed(() => {
+  return isRegisterMode.value ? 'Crear cuenta' : 'Bienvenido!'
+})
+
+const formSubtitle = computed(() => {
+  return isRegisterMode.value
+    ? 'Registra tu cuenta profesional en Nutría'
+    : 'Inicia sesión en tu cuenta Nutría'
+})
+
+const submitText = computed(() => {
+  if (loginSuccess.value) return 'Acceso exitoso'
+  if (isLoading.value) return isRegisterMode.value ? 'Creando cuenta...' : 'Verificando...'
+
+  return isRegisterMode.value ? 'Crear cuenta' : 'Iniciar sesión'
 })
 
 onMounted(() => {
@@ -232,8 +378,37 @@ onMounted(() => {
   }, 100)
 })
 
+function clearErrors() {
+  errorMsg.value = ''
+
+  Object.assign(errors, {
+    firstName: '',
+    lastName: '',
+    specialization: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  })
+}
+
+function validateFirstName() {
+  if (isRegisterMode.value && !form.firstName.trim()) {
+    errors.firstName = 'El nombre es requerido.'
+  } else {
+    errors.firstName = ''
+  }
+}
+
+function validateLastName() {
+  if (isRegisterMode.value && !form.lastName.trim()) {
+    errors.lastName = 'El apellido es requerido.'
+  } else {
+    errors.lastName = ''
+  }
+}
+
 function validateEmail() {
-  if (!form.email) {
+  if (!form.email.trim()) {
     errors.email = 'El correo es requerido.'
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
     errors.email = 'Ingresa un correo válido.'
@@ -252,24 +427,59 @@ function validatePassword() {
   }
 }
 
-async function handleLogin() {
+function validateConfirmPassword() {
+  if (!isRegisterMode.value) {
+    errors.confirmPassword = ''
+    return
+  }
+
+  if (!form.confirmPassword) {
+    errors.confirmPassword = 'Confirma tu contraseña.'
+  } else if (form.confirmPassword !== form.password) {
+    errors.confirmPassword = 'Las contraseñas no coinciden.'
+  } else {
+    errors.confirmPassword = ''
+  }
+}
+
+function validateForm() {
+  validateFirstName()
+  validateLastName()
   validateEmail()
   validatePassword()
+  validateConfirmPassword()
 
-  if (errors.email || errors.password) return
+  return (
+    !errors.firstName &&
+    !errors.lastName &&
+    !errors.email &&
+    !errors.password &&
+    !errors.confirmPassword
+  )
+}
+
+async function handleSubmit() {
+  if (isRegisterMode.value) {
+    await handleRegister()
+    return
+  }
+
+  await handleLogin()
+}
+
+async function handleLogin() {
+  if (!validateForm()) return
 
   isLoading.value = true
   errorMsg.value = ''
 
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: form.email,
+      email: form.email.trim(),
       password: form.password,
     })
 
-    if (error) {
-      throw error
-    }
+    if (error) throw error
 
     if (!data.session || !data.user) {
       throw new Error('No se pudo iniciar sesión.')
@@ -278,15 +488,76 @@ async function handleLogin() {
     await auth.loadUser()
     loginSuccess.value = true
 
+    toast.success('Inicio de sesión correcto.')
+
     setTimeout(() => {
       router.push('/dashboard')
     }, 700)
   } catch (err) {
-    if (err instanceof Error) {
-      errorMsg.value = err.message
-    } else {
-      errorMsg.value = 'Credenciales incorrectas. Intenta de nuevo.'
+    errorMsg.value =
+      err instanceof Error
+        ? err.message
+        : 'Credenciales incorrectas. Intenta de nuevo.'
+
+    toast.error(errorMsg.value)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+async function handleRegister() {
+  if (!validateForm()) return
+
+  isLoading.value = true
+  errorMsg.value = ''
+
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email: form.email.trim(),
+      password: form.password,
+      options: {
+        data: {
+          first_name: form.firstName.trim(),
+          last_name: form.lastName.trim(),
+          specialization: form.specialization.trim(),
+        },
+      },
+    })
+
+    if (error) throw error
+
+    if (!data.user) {
+      throw new Error('No se pudo crear la cuenta.')
     }
+
+    /*
+      Si tienes desactivada la confirmación por correo en Supabase,
+      normalmente data.session viene con sesión activa.
+    */
+    if (data.session) {
+      await auth.loadUser()
+
+      toast.success('Cuenta creada correctamente.')
+
+      setTimeout(() => {
+        router.push('/dashboard')
+      }, 700)
+
+      return
+    }
+
+    toast.success('Cuenta creada. Revisa tu correo para confirmar tu cuenta.')
+
+    authMode.value = 'login'
+    form.password = ''
+    form.confirmPassword = ''
+  } catch (err) {
+    errorMsg.value =
+      err instanceof Error
+        ? err.message
+        : 'No se pudo crear la cuenta.'
+
+    toast.error(errorMsg.value)
   } finally {
     isLoading.value = false
   }
@@ -297,7 +568,14 @@ function forgotPassword() {
 }
 
 function goToRegister() {
-  router.push('/register')
+  clearErrors()
+  authMode.value = 'register'
+}
+
+function goToLogin() {
+  clearErrors()
+  authMode.value = 'login'
+  form.confirmPassword = ''
 }
 </script>
 
@@ -746,5 +1024,23 @@ background: linear-gradient(
     rgba(0, 0, 0, 0.05) 70%,
     rgba(0, 0, 0, 0) 100%
 );
+}
+
+.register-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.field-input.no-icon {
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+@media (max-width: 520px) {
+  .register-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
 }
 </style>
