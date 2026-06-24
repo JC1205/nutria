@@ -111,17 +111,18 @@
     </section>
 
     <!-- ── RECOMMENDATIONS ─────────────────────────────────── -->
-    <section class="notes-section">
-      <h3>Recomendaciones generales</h3>
+<section v-if="recommendationLines.length" class="notes-section">
+  <h3>Recomendaciones generales</h3>
 
-      <ul>
-        <li>Beber suficiente agua durante el día, de acuerdo con las indicaciones del profesional.</li>
-        <li>Respetar los horarios de comida establecidos en el plan.</li>
-        <li>Evitar modificar porciones sin autorización profesional.</li>
-        <li>Registrar cualquier malestar, intolerancia o cambio relevante durante el seguimiento.</li>
-        <li>Complementar el plan con actividad física según las recomendaciones indicadas.</li>
-      </ul>
-    </section>
+  <ul>
+    <li
+      v-for="(recommendation, index) in recommendationLines"
+      :key="index"
+    >
+      {{ recommendation }}
+    </li>
+  </ul>
+</section>
 
     <!-- ── FOOTER ──────────────────────────────────────────── -->
     <footer class="doc-footer">
@@ -133,6 +134,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import nutriaLogo from '@/assets/logo-nutria-07.png'
 
 interface PlanFood {
@@ -176,10 +178,30 @@ const props = defineProps<{
   caloricTarget: number
   weekRangeLabel: string
   days: DayPlan[]
+  generalRecommendations?: string
+
+  doctorName?: string
+  doctorEmail?: string
+  doctorPhone?: string
 }>()
 
-const doctorName = 'Nutrióloga Alejandra Lagarda'
-const contactLine = 'Correo: alelagarda@gmail.com'
+const doctorName = computed(() => {
+  return props.doctorName || 'Nutriólogo'
+})
+
+const contactLine = computed(() => {
+  const items = []
+
+  if (props.doctorEmail) {
+    items.push(`Correo: ${props.doctorEmail}`)
+  }
+
+  if (props.doctorPhone) {
+    items.push(`Tel: ${props.doctorPhone}`)
+  }
+
+  return items.length ? items.join(' · ') : 'Sin datos de contacto'
+})
 
 const issuedDate = new Date().toLocaleDateString('es-MX', {
   day: 'numeric',
@@ -188,6 +210,13 @@ const issuedDate = new Date().toLocaleDateString('es-MX', {
 })
 
 const startDateLabel = props.days[0]?.dateLabel ?? 'Sin fecha'
+
+const recommendationLines = computed(() => {
+  return (props.generalRecommendations ?? '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+})
 </script>
 
 <style scoped>

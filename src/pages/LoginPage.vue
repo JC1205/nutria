@@ -488,7 +488,6 @@ async function handleLogin() {
     await auth.loadUser()
     loginSuccess.value = true
 
-    toast.success('Inicio de sesión correcto.')
 
     setTimeout(() => {
       router.push('/dashboard')

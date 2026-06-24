@@ -24,10 +24,14 @@
     <Printer :size="16" /> Vista previa
   </button>
 
-  <button class="btn-save" @click="savePlan" :disabled="saving">
+  <button class="btn-primary" @click="savePlan" :disabled="saving">
   <span v-if="saving" class="spinner-sm" />
   <Save v-else :size="16" />
   {{ editingMode ? 'Actualizar' : 'Guardar' }}
+</button>
+
+<button type="button" class="btn-secondary btn-clear-plan" @click="clearPlanDraft">
+  Limpiar plan
 </button>
 </div>
       </div>
@@ -161,7 +165,19 @@
         </div>
       </TransitionGroup>
 
+<div class="recommendations-box">
+  <label class="recommendations-label">Recomendaciones generales</label>
+
+  <textarea
+    v-model="generalRecommendations"
+    class="recommendations-input"
+    rows="5"
+    placeholder="Ejemplo: Tomar 2 litros de agua al día, evitar bebidas azucaradas, respetar horarios de comida..."
+  ></textarea>
+</div>
     </div>
+
+    
 
     <!-- ══════════════════════════════════════════════════════
          PANEL LATERAL — Resumen nutricional
@@ -653,6 +669,10 @@
   :caloric-target="caloricTarget"
   :week-range-label="weekRangeLabel"
   :days="days"
+  :general-recommendations="generalRecommendations"
+  :doctor-name="doctorName"
+  :doctor-email="doctorEmail"
+  :doctor-phone="doctorPhone"
 />
           </div>
         </div>
@@ -691,7 +711,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, nextTick } from 'vue'
+import { computed, onMounted, reactive, ref, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import MealPlanPdfPreview from '@/components/MealPlanPdfPreview.vue'
 import { useToastStore } from '@/stores/toast.store'
@@ -853,6 +873,7 @@ const activeDayIndex = ref(0)
 const startDate = ref(new Date().toISOString().slice(0, 10))
 
 const caloricTarget = ref(1800)
+const generalRecommendations = ref('')
 
 const editingMealPlanId = ref<string | null>(null)
 const editingMode = computed(() => !!editingMealPlanId.value)
@@ -881,6 +902,22 @@ const pdfPreviewModal = reactive({
 
 const generatingPdf = ref(false)
 const pdfContentRef = ref<HTMLElement | null>(null)
+
+const doctorName = computed(() => {
+  const first = auth.profile?.first_name ?? ''
+  const last = auth.profile?.last_name ?? ''
+  const fullName = `${first} ${last}`.trim()
+
+  return fullName || 'Nutriólogo'
+})
+
+const doctorEmail = computed(() => {
+  return auth.user?.email ?? ''
+})
+
+const doctorPhone = computed(() => {
+  return auth.profile?.phone ?? ''
+})
 
 /* ─────────────────────────────────────────────────────────
    USUARIO
@@ -1024,6 +1061,14 @@ function buildDays(daysCount: number): DayPlan[] {
 
 const days = ref<DayPlan[]>(buildDays(duration.value))
 
+watch(
+  [selectedPatient, duration, startDate, caloricTarget, generalRecommendations, days],
+  () => {
+    savePlanDraft()
+  },
+  { deep: true },
+)
+
 const EMPTY_DAY: DayPlan = {
   label: 'Día',
   dateLabel: '',
@@ -1032,14 +1077,60 @@ const EMPTY_DAY: DayPlan = {
 }
 
 function setDuration(daysCount: number) {
+  const oldDays = days.value
+
   duration.value = daysCount
-  days.value = buildDays(daysCount)
-  activeDayIndex.value = 0
+
+  const newDays = buildDays(daysCount)
+
+  days.value = newDays.map((newDay, index) => {
+    const oldDay = oldDays[index]
+
+    if (!oldDay) return newDay
+
+    return {
+      ...newDay,
+      meals: newDay.meals.map((newMeal) => {
+        const oldMeal = oldDay.meals.find((meal) => meal.id === newMeal.id)
+
+        return {
+          ...newMeal,
+          foods: oldMeal?.foods ?? [],
+        }
+      }),
+    }
+  })
+
+  if (activeDayIndex.value >= days.value.length) {
+    activeDayIndex.value = Math.max(days.value.length - 1, 0)
+  }
+
+  savePlanDraft()
 }
 
 function updateStartDate() {
-  days.value = buildDays(duration.value)
-  activeDayIndex.value = 0
+  const oldDays = days.value
+  const newDays = buildDays(duration.value)
+
+  days.value = newDays.map((newDay, index) => {
+    const oldDay = oldDays[index]
+
+    if (!oldDay) return newDay
+
+    return {
+      ...newDay,
+      meals: newDay.meals.map((newMeal) => {
+        const oldMeal = oldDay.meals.find((meal) => meal.id === newMeal.id)
+
+        return {
+          ...newMeal,
+          foods: oldMeal?.foods ?? [],
+        }
+      }),
+    }
+  })
+
+  savePlanDraft()
 }
 
 const currentDay = computed<DayPlan>(() => {
@@ -1124,6 +1215,140 @@ function planFoodFromPortionNote(item: {
   }
 }
 
+const DRAFT_KEY = computed(() => {
+  return auth.user ? `meal-plan-draft-${auth.user.id}` : 'meal-plan-draft'
+})
+
+const loadingDraft = ref(false)
+
+function savePlanDraft() {
+  if (!auth.user || loadingDraft.value || editingMode.value) return
+
+  const cleanDays = days.value.map((day) => ({
+    label: day.label,
+    dateLabel: day.dateLabel,
+    fullDate: day.fullDate,
+    meals: day.meals.map((meal) => ({
+      id: meal.id,
+      foods: meal.foods.map((food) => ({
+        id: food.id,
+        group: food.group,
+        name: food.name,
+        quantity: food.quantity,
+        unit: food.unit,
+        weightG: food.weightG,
+        energyKcal: food.energyKcal,
+        proteinG: food.proteinG,
+        carbsG: food.carbsG,
+        lipidsG: food.lipidsG,
+        source: food.source,
+        recipeId: food.recipeId,
+        recipeName: food.recipeName,
+        adjustedIngredients: food.adjustedIngredients ?? [],
+        uid: food.uid,
+      })),
+    })),
+  }))
+
+  localStorage.setItem(
+    DRAFT_KEY.value,
+    JSON.stringify({
+      selectedPatient: selectedPatient.value,
+      duration: duration.value,
+      startDate: startDate.value,
+      caloricTarget: caloricTarget.value,
+      generalRecommendations: generalRecommendations.value,
+      activeDayIndex: activeDayIndex.value,
+      days: cleanDays,
+    }),
+  )
+}
+
+function loadPlanDraft() {
+  const saved = localStorage.getItem(DRAFT_KEY.value)
+
+  if (!saved) return
+
+  try {
+    loadingDraft.value = true
+
+    const draft = JSON.parse(saved)
+
+    selectedPatient.value = draft.selectedPatient ?? selectedPatient.value
+    duration.value = Number(draft.duration ?? duration.value)
+    startDate.value = draft.startDate ?? startDate.value
+    caloricTarget.value = Number(draft.caloricTarget ?? caloricTarget.value)
+    generalRecommendations.value = draft.generalRecommendations ?? ''
+
+    const baseDays = buildDays(duration.value)
+
+    const savedDays = Array.isArray(draft.days) ? draft.days : []
+
+    days.value = baseDays.map((baseDay, dayIndex) => {
+      const savedDay = savedDays[dayIndex]
+
+      if (!savedDay) return baseDay
+
+      return {
+        ...baseDay,
+        meals: baseDay.meals.map((baseMeal) => {
+          const savedMeal = savedDay.meals?.find((meal: any) => meal.id === baseMeal.id)
+
+          return {
+            ...baseMeal,
+            foods: Array.isArray(savedMeal?.foods)
+              ? savedMeal.foods.map((food: any) => ({
+                  id: food.id,
+                  group: food.group,
+                  name: food.name,
+                  quantity: Number(food.quantity ?? 1),
+                  unit: food.unit ?? '',
+                  weightG: Number(food.weightG ?? 0),
+                  energyKcal: Number(food.energyKcal ?? 0),
+                  proteinG: Number(food.proteinG ?? 0),
+                  carbsG: Number(food.carbsG ?? 0),
+                  lipidsG: Number(food.lipidsG ?? 0),
+                  source: food.source ?? 'food',
+                  recipeId: food.recipeId,
+                  recipeName: food.recipeName,
+                  adjustedIngredients: food.adjustedIngredients ?? [],
+                  uid: food.uid ?? `${food.id}-${Date.now()}`,
+                }))
+              : [],
+          }
+        }),
+      }
+    })
+
+    activeDayIndex.value = Math.min(
+      Number(draft.activeDayIndex ?? 0),
+      Math.max(days.value.length - 1, 0),
+    )
+  } catch {
+    localStorage.removeItem(DRAFT_KEY.value)
+  } finally {
+    loadingDraft.value = false
+  }
+}
+
+function clearPlanDraft() {
+  localStorage.removeItem(DRAFT_KEY.value)
+
+  selectedPatient.value = ''
+  duration.value = 2
+  startDate.value = new Date().toISOString().slice(0, 10)
+  caloricTarget.value = 1800
+  generalRecommendations.value = ''
+  activeDayIndex.value = 0
+  editingMealPlanId.value = null
+  savedMealPlanId.value = null
+  
+
+  days.value = buildDays(duration.value)
+
+  toast.info('Borrador limpiado.')
+}
+
 async function loadMealPlanForEdit(mealPlanId: string) {
   const user = await ensureUser()
 
@@ -1163,6 +1388,7 @@ async function loadMealPlanForEdit(mealPlanId: string) {
 
   duration.value = plan.duration_days
   startDate.value = plan.start_date ?? startDate.value
+  generalRecommendations.value = plan.notes ?? ''
 
   const patientFromPlan = patientOptions.value.find((patient) => patient.id === plan.patient_id)
 
@@ -1546,6 +1772,7 @@ function confirmAddFood() {
     uid: `${food.id}-${Date.now()}`,
   })
 
+  savePlanDraft()
   closeFoodPicker()
 }
 
@@ -1573,11 +1800,13 @@ function confirmAddRecipe() {
     uid: `recipe-${recipe.id}-${Date.now()}`,
   })
 
+  savePlanDraft()
   closeFoodPicker()
 }
 
 function removeFood(meal: Meal, index: number) {
   meal.foods.splice(index, 1)
+  savePlanDraft()
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -1642,7 +1871,7 @@ async function savePlan() {
           title: `Plan alimenticio - ${selectedPatient.value}`,
           duration_days: duration.value,
           start_date: startDate.value,
-          notes: `Meta calórica diaria: ${caloricTarget.value} kcal`,
+          notes: generalRecommendations.value.trim() || null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', editingMealPlanId.value)
@@ -1665,7 +1894,7 @@ async function savePlan() {
           title: `Plan alimenticio - ${selectedPatient.value}`,
           duration_days: duration.value,
           start_date: startDate.value,
-          notes: `Meta calórica diaria: ${caloricTarget.value} kcal`,
+          notes: generalRecommendations.value.trim() || null,
         })
         .select('id')
         .single()
@@ -1696,18 +1925,14 @@ async function savePlan() {
       ),
     )
 
-    if (items.length > 0) {
-      const { error: itemsError } = await supabase.from('meal_plan_items').insert(items)
-
-      if (itemsError) throw itemsError
-    }
-
-    if (items.length > 0) {
-  const { error: itemsError } = await supabase.from('meal_plan_items').insert(items)
+if (items.length > 0) {
+  const { error: itemsError } = await supabase
+    .from('meal_plan_items')
+    .insert(items)
 
   if (itemsError) throw itemsError
 }
-
+localStorage.removeItem(DRAFT_KEY.value)
 toast.success(editingMode.value ? 'Plan guardado correctamente.' : 'Plan guardado correctamente.')
   } catch (err) {
     pageError.value = err instanceof Error ? err.message : 'No se pudo guardar el plan.'
@@ -1716,6 +1941,8 @@ toast.success(editingMode.value ? 'Plan guardado correctamente.' : 'Plan guardad
     saving.value = false
   }
 }
+
+
 
 /* ─────────────────────────────────────────────────────────
    PDF
@@ -1911,6 +2138,14 @@ onMounted(async () => {
 
   if (typeof queryMealPlanId === 'string') {
     await loadMealPlanForEdit(queryMealPlanId)
+  }
+
+  if (typeof queryMealPlanId !== 'string') {
+    loadPlanDraft()
+  }
+
+  if (!days.value.length) {
+    days.value = buildDays(duration.value)
   }
 
   setTimeout(() => {
@@ -2360,7 +2595,9 @@ onMounted(async () => {
   border-radius: 9px; font-size: .82rem; font-weight: 600;
   color: #374151; cursor: pointer; font-family: inherit; transition: .2s;
 }
-.btn-secondary:hover { border-color: #9ca3af; }
+.btn-secondary:hover { border-color: #a5a5a5; background: #ffffff; color: #a5a5a5; }
+
+
 
 .btn-primary {
   display: flex; align-items: center; gap: 6px;
@@ -3108,4 +3345,51 @@ onMounted(async () => {
   background: #fff;
 }
 
+.recommendations-box {
+  margin-top: 1.5rem;
+  background: #fff;
+  border: 1.5px solid #eef0f4;
+  border-radius: 18px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 28px rgba(15, 25, 35, .05);
+}
+
+.recommendations-label {
+  display: block;
+  font-size: .88rem;
+  font-weight: 600;
+  color: #0f1923;
+  margin-bottom: .6rem;
+}
+
+.recommendations-input {
+  width: 96%;
+  min-height: 120px;
+  resize: vertical;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 14px;
+  padding: .85rem;
+  font-family: inherit;
+  font-size: .9rem;
+  color: #0f1923;
+  background: #f9fafb;
+  outline: none;
+  transition: .2s ease;
+}
+
+.recommendations-input:focus {
+  background: #fff;
+  border-color: #3E9B92;
+  box-shadow: 0 0 0 4px rgba(62, 155, 146, .12);
+}
+
+.clear-plan-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.btn-clear-plan {
+  margin-left: auto;
+}
 </style>

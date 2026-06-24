@@ -2403,7 +2403,7 @@ onMounted(async () => {
 .document-info strong {
   font-size: .88rem;
   color: #0f1923;
-  font-weight: 800;
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2472,7 +2472,7 @@ onMounted(async () => {
 }
 
 .meal-plan-item {
-  width: 95%;
+  width: 100%;
   border: 1.5px solid #f0f0f5;
   background: #fff;
   border-radius: 14px;
@@ -2512,7 +2512,7 @@ onMounted(async () => {
   display: block;
   font-size: .9rem;
   color: #0f1923;
-  font-weight: 800;
+  font-weight: 600;
   margin-bottom: 4px;
   white-space: nowrap;
   overflow: hidden;
@@ -2576,15 +2576,15 @@ onMounted(async () => {
   flex-shrink: 0;
   padding: 7px 12px;
   border-radius: 999px;
-  background: #f3eeff;
-  color: #8E73A8;
+  background: #e6f8f6;
+  color: #3E9B92;
   font-size: .76rem;
   font-weight: 800;
   transition: .2s ease;
 }
 
 .meal-plan-item:hover .meal-plan-action {
-  background: #8E73A8;
+  background: #3E9B92;
   color: #fff;
 }
 
@@ -2597,7 +2597,7 @@ onMounted(async () => {
 }
 
 .plan-modal-hero {
-  background: linear-gradient(135deg, #8E73A8, #6f4f91);
+  background: linear-gradient(135deg, #3E9B92, #3E9B92);
   color: #fff;
   padding: 1.35rem 1.5rem;
   display: flex;
@@ -2616,7 +2616,7 @@ onMounted(async () => {
   width: 52px;
   height: 52px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, .18);
+  background: rgba(131, 84, 84, 0.18);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2626,7 +2626,7 @@ onMounted(async () => {
 
 .plan-modal-main h2 {
   font-size: 1.2rem;
-  font-weight: 850;
+  font-weight: 700;
   margin: 0;
 }
 
@@ -2651,7 +2651,7 @@ onMounted(async () => {
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
   padding: 1rem 1.3rem;
-  background: #faf8ff;
+  background: #f1fbfa;
   border-bottom: 1px solid #eee6f8;
 }
 
@@ -2697,8 +2697,8 @@ onMounted(async () => {
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
   padding: 1rem 1.3rem;
-  background: #faf8ff;
-  border-bottom: 1px solid #eee6f8;
+  background: #f1fbfa;
+  border-bottom: 1px solid #e8faf8;
 }
 
 .plan-detail-summary div {
@@ -2711,7 +2711,7 @@ onMounted(async () => {
 .plan-detail-summary span {
   font-size: .68rem;
   color: #9ca3af;
-  font-weight: 850;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .05em;
 }
@@ -2719,7 +2719,7 @@ onMounted(async () => {
 .plan-detail-summary strong {
   font-size: .84rem;
   color: #0f1923;
-  font-weight: 850;
+  font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2755,7 +2755,7 @@ onMounted(async () => {
 
 .saved-plan-day-title h3 {
   font-size: .95rem;
-  font-weight: 900;
+  font-weight: 700;
   color: #0f1923;
   margin: 0;
 }
@@ -2771,8 +2771,8 @@ onMounted(async () => {
   min-width: 30px;
   height: 30px;
   border-radius: 999px;
-  background: #f3eeff;
-  color: #8E73A8;
+  background: #e6f8f6;
+  color: #3E9B92;
   font-size: .78rem;
   font-weight: 900;
   display: flex;
@@ -2796,8 +2796,8 @@ onMounted(async () => {
 
 .saved-plan-meal-title {
   font-size: .82rem;
-  font-weight: 900;
-  color: #8E73A8;
+  font-weight: 800;
+  color: #3E9B92;
   margin-bottom: 8px;
 }
 
@@ -2818,7 +2818,7 @@ onMounted(async () => {
   display: block;
   font-size: .84rem;
   color: #0f1923;
-  font-weight: 850;
+  font-weight: 600;
 }
 
 .saved-plan-food p {
