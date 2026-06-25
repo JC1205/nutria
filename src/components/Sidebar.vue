@@ -225,7 +225,8 @@ async function handleSignOut() {
   height: 100vh;
   overflow: hidden;
   transition: width .35s cubic-bezier(.4, 0, .2, 1);
-  box-shadow: 2px 0 20px rgba(142, 115, 168, .06);
+  /* ← era rgba(142,115,168,.06) — ahora verde */
+  box-shadow: 2px 0 20px rgba(62, 155, 146, .07);
   z-index: 100;
   flex-shrink: 0;
 }
@@ -263,39 +264,29 @@ async function handleSignOut() {
   display: block;
 }
 
-.brand-logo.full {
-  width: 145px;
-  height: auto;
-}
-
-.brand-logo.small {
-  width: 42px;
-  height: 42px;
-}
+.brand-logo.full  { width: 145px; height: auto; }
+.brand-logo.small { width: 42px;  height: 42px; }
 
 .logo-switch-enter-active,
 .logo-switch-leave-active {
   transition: opacity .22s ease, transform .22s ease;
 }
-
 .logo-switch-enter-from,
 .logo-switch-leave-to {
   opacity: 0;
   transform: scale(.92);
 }
 
-.sidebar.collapsed .brand-logo {
-  width: 42px;
-}
-
+.sidebar.collapsed .brand-logo { width: 42px; }
 
 .collapse-btn {
   flex-shrink: 0;
   width: 28px;
   height: 28px;
-  border: 1px solid #ebebf5;
+  /* ← era #ebebf5 / #fafafe — ahora tono verde muy suave */
+  border: 1px solid #d9f7ee;
   border-radius: 8px;
-  background: #fafafe;
+  background: #f1fbf8;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -312,7 +303,8 @@ async function handleSignOut() {
   width: 24px;
   height: 24px;
 }
-.collapse-btn:hover { background: #dffbf8; border-color: #addad6; }
+/* ← era #dffbf8 / #addad6 — coherente con la paleta */
+.collapse-btn:hover { background: #d7f0e8; border-color: #9ed4cf; }
 
 .collapse-btn svg {
   transition: transform .35s cubic-bezier(.4, 0, .2, 1);
@@ -357,13 +349,15 @@ async function handleSignOut() {
 }
 
 .nav-item:hover:not(.active) {
-  background: #f0fafa;
+  /* ← era #f7f4ff — ahora verde muy claro */
+  background: #e5f9f3;
   color: #3E9B92;
   transform: translateX(2px);
 }
 
 .nav-item.active {
-  background: linear-gradient(135deg, #e7fffd 0%, #d9f9f6 100%);
+  /* ← era linear-gradient(#f3eeff, #ede6ff) — ahora verde */
+  background: linear-gradient(135deg, #e5f9f3 0%, #d4f9ef 100%);
   color: #3E9B92;
   font-weight: 600;
 }
@@ -386,6 +380,7 @@ async function handleSignOut() {
   width: 6px;
   height: 6px;
   border-radius: 50%;
+  /* ← era #8E73A8 — ahora verde */
   background: #3E9B92;
   flex-shrink: 0;
   margin-left: auto;
@@ -409,8 +404,9 @@ async function handleSignOut() {
   gap: 10px;
   padding: 10px 12px;
   border-radius: 12px;
-  background: #effffc;
-  border: 1px solid #e9f9f8;
+  /* ← era #faf9ff / #f0ebff — ahora verde muy tenue */
+  background: #ecfaf6;
+  border: 1px solid #e4faf4;
   overflow: hidden;
   transition: padding .35s;
 }
@@ -420,6 +416,7 @@ async function handleSignOut() {
   width: 38px;
   height: 38px;
   border-radius: 12px;
+  /* ← era #8E73A8 / #6b50a0 — ahora verde */
   background: linear-gradient(135deg, #3E9B92, #2d7a72);
   color: #fff;
   display: flex;

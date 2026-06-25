@@ -1145,7 +1145,7 @@ async function loadPatient() {
     id: data.id,
     name: data.full_name,
     initials: getInitials(data.full_name),
-    color: '#3E9B92',
+    color: data.color ?? '#3E9B92',
     age: calculateAge(data.birth_date),
     sex: data.sex === 'male' ? 'M' : 'F',
     birthDate: data.birth_date,
@@ -1156,7 +1156,7 @@ async function loadPatient() {
     currentWeight,
     goalWeight,
     phone: data.phone ?? 'Sin registrar',
-    status: 'Active',
+    status: data.status === 'Inactive' ? 'Inactive' : 'Active',
     caloricGoal: Number(data.target_calories ?? data.daily_calories ?? 0),
 
     // Por ahora tu tabla no tiene water_intake ni meals_per_day en esta versión simple.
@@ -1700,7 +1700,7 @@ onMounted(async () => {
 
 .hero-avatar {
   width: 68px; height: 68px;
-  border-radius: 18px;
+  border-radius: 40px;
   display: flex; align-items: center; justify-content: center;
   font-size: 1.5rem; font-weight: 700; color: #fff;
   flex-shrink: 0;

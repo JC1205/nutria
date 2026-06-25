@@ -514,6 +514,8 @@ interface PatientRow {
   exercise_days: number | null
   created_at: string
   updated_at: string
+  status: string | null
+  color: string | null
 }
 
 interface Patient {
@@ -599,8 +601,8 @@ const AVATAR_COLORS = [
   '#14b8a6',
 ]
 
-function makeColor(index: number): string {
-  return AVATAR_COLORS[index % AVATAR_COLORS.length] ?? '#3E9B92'
+function randomPatientColor(): string {
+  return AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)] ?? '#3E9B92'
 }
 
 function getInitials(name: string) {
@@ -643,7 +645,7 @@ function mapPatient(row: PatientRow, index: number): Patient {
     id: row.id,
     name: row.full_name,
     initials: getInitials(row.full_name),
-    color: makeColor(index),
+    color: row.color ?? '#3E9B92',
     age: calculateAge(row.birth_date),
     birthDate: row.birth_date,
     heightCm: row.height_cm,
@@ -668,7 +670,7 @@ function mapPatient(row: PatientRow, index: number): Patient {
     exerciseDays: row.exercise_days,
 
     lastAppointment: row.created_at,
-    status: 'Active',
+    status: row.status === 'Inactive' ? 'Inactive' : 'Active',
   }
 }
 
@@ -959,6 +961,11 @@ const payload = {
   exercise_intensity: form.exerciseIntensity || null,
   exercise_hours: form.exerciseHours,
   exercise_days: form.exerciseDays,
+
+    status: form.status,
+  color: modal.mode === 'create'
+    ? randomPatientColor()
+    : modal.patient?.color ?? '#3E9B92',
 }
 
   try {

@@ -244,6 +244,7 @@ interface PatientRow {
   current_weight: number | null
   goal_weight: number | null
   created_at: string
+  color: string | null
 }
 
 interface AppointmentRow {
@@ -714,68 +715,75 @@ async function loadDashboard() {
   const today = todayISO()
   const monthStart = monthStartISO()
 
-  const [
-    patientsCountResult,
-    newPatientsResult,
-    todayAppointmentsResult,
-    mealPlansResult,
-    documentsResult,
-    recipesResult,
-    recentPatientsResult,
-    todaysApptsResult,
-    allPatientsForChartResult,
-  ] = await Promise.all([
-    supabase
-      .from('patients')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id),
+const [
+  patientsCountResult,
+  activePatientsResult,
+  newPatientsResult,
+  todayAppointmentsResult,
+  mealPlansResult,
+  documentsResult,
+  recipesResult,
+  recentPatientsResult,
+  todaysApptsResult,
+  allPatientsForChartResult,
+] = await Promise.all([
+  supabase
+    .from('patients')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id),
 
-    supabase
-      .from('patients')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .gte('created_at', monthStart),
+  supabase
+    .from('patients')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .in('status', ['Active', 'active']),
 
-    supabase
-      .from('appointments')
-      .select('id, status', { count: 'exact' })
-      .eq('user_id', user.id)
-      .eq('appointment_date', today),
+  supabase
+    .from('patients')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .gte('created_at', monthStart),
 
-    supabase
-      .from('meal_plans')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id),
+  supabase
+    .from('appointments')
+    .select('id, status', { count: 'exact' })
+    .eq('user_id', user.id)
+    .eq('appointment_date', today),
 
-    supabase
-      .from('documents')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id),
+  supabase
+    .from('meal_plans')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id),
 
-    supabase
-      .from('recipes')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id),
+  supabase
+    .from('documents')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id),
 
-    supabase
-      .from('patients')
-      .select('id, full_name, birth_date, current_weight, goal_weight, created_at')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(4),
+  supabase
+    .from('recipes')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id),
 
-    supabase
-      .from('appointments')
-      .select('id, patient_id, appointment_date, appointment_time, reason, status')
-      .eq('user_id', user.id)
-      .eq('appointment_date', today)
-      .order('appointment_time', { ascending: true }),
+  supabase
+    .from('patients')
+    .select('id, full_name, birth_date, current_weight, goal_weight, created_at, color')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(4),
 
-    supabase
-      .from('patients')
-      .select('created_at')
-      .eq('user_id', user.id),
-  ])
+  supabase
+    .from('appointments')
+    .select('id, patient_id, appointment_date, appointment_time, reason, status')
+    .eq('user_id', user.id)
+    .eq('appointment_date', today)
+    .order('appointment_time', { ascending: true }),
+
+  supabase
+    .from('patients')
+    .select('created_at')
+    .eq('user_id', user.id),
+])
 
   const firstError =
     patientsCountResult.error ||
@@ -798,7 +806,7 @@ async function loadDashboard() {
 
   stats.value = {
     patients: patientsCountResult.count ?? 0,
-    activePatients: patientsCountResult.count ?? 0,
+    activePatients: activePatientsResult.count ?? 0,
     todayAppointments: todayAppointmentsResult.count ?? 0,
     confirmedTodayAppointments: todayApptsData.filter((appt) => appt.status === 'confirmed').length,
     mealPlans: mealPlansResult.count ?? 0,
@@ -818,19 +826,19 @@ async function loadDashboard() {
       progress,
       onTrack: progress >= 40,
       initials: initials(patient.full_name),
-      color: colorFor(patient.id),
+      color: patient.color ?? '#3E9B92',
     }
   })
 
   const appts = (todaysApptsResult.data ?? []) as AppointmentRow[]
   const patientIds = [...new Set(appts.map((appt) => appt.patient_id).filter(Boolean))]
 
-  let patientMap: Record<string, string> = {}
+  let patientMap: Record<string, { name: string; color: string }> = {}
 
   if (patientIds.length > 0) {
     const { data: apptPatients, error: apptPatientsError } = await supabase
       .from('patients')
-      .select('id, full_name')
+      .select('id, full_name, color')
       .in('id', patientIds)
       .eq('user_id', user.id)
 
@@ -841,24 +849,33 @@ async function loadDashboard() {
     }
 
     patientMap = Object.fromEntries(
-      (apptPatients ?? []).map((patient) => [patient.id, patient.full_name]),
-    )
+  (apptPatients ?? []).map((patient) => [
+    patient.id,
+    {
+      name: patient.full_name,
+      color: patient.color ?? '#3E9B92',
+    },
+  ]),
+)
   }
 
-  todayAppointments.value = appts.map((appt) => {
-    const name = patientMap[appt.patient_id] ?? 'Paciente'
+ todayAppointments.value = appts.map((appt) => {
+  const patientInfo = patientMap[appt.patient_id]
 
-    return {
-      id: appt.id,
-      time: formatTime(appt.appointment_time),
-      name,
-      type: appt.reason || 'Consulta',
-      initials: initials(name),
-      color: colorFor(appt.patient_id),
-      status: appt.status ?? 'pending',
-      statusLabel: statusLabel(appt.status),
-    }
-  })
+  const name = patientInfo?.name ?? 'Paciente'
+  const color = patientInfo?.color ?? '#3E9B92'
+
+  return {
+    id: appt.id,
+    time: formatTime(appt.appointment_time),
+    name,
+    type: appt.reason || 'Consulta',
+    initials: initials(name),
+    color,
+    status: appt.status ?? 'pending',
+    statusLabel: statusLabel(appt.status),
+  }
+})
 
 
   const monthCounts: Record<string, number> = {}

@@ -70,7 +70,8 @@
           </div>
         </Transition>
 
-        <template v-if="isRegisterMode">
+<Transition name="fade-register" mode="out-in">
+  <div v-if="isRegisterMode" class="register-extra-fields">
   <div class="register-grid">
     <div class="field-group" :class="{ focused: focus.firstName, error: errors.firstName }">
       <label class="field-label">Nombre</label>
@@ -109,20 +110,8 @@
     </div>
   </div>
 
-  <div class="field-group" :class="{ focused: focus.specialization, error: errors.specialization }">
-    <label class="field-label">Especialización</label>
-    <div class="input-wrapper">
-      <input
-        v-model="form.specialization"
-        type="text"
-        placeholder="Nutrición clínica"
-        class="field-input no-icon"
-        @focus="focus.specialization = true"
-        @blur="focus.specialization = false"
-      />
-    </div>
   </div>
-</template>
+</Transition>
 
         <!-- Formulario -->
         <form @submit.prevent="handleSubmit" novalidate>
@@ -330,7 +319,6 @@ const isRegisterMode = computed(() => authMode.value === 'register')
 const form = reactive({
   firstName: '',
   lastName: '',
-  specialization: '',
   email: '',
   password: '',
   confirmPassword: '',
@@ -340,7 +328,6 @@ const form = reactive({
 const errors = reactive({
   firstName: '',
   lastName: '',
-  specialization: '',
   email: '',
   password: '',
   confirmPassword: '',
@@ -384,7 +371,6 @@ function clearErrors() {
   Object.assign(errors, {
     firstName: '',
     lastName: '',
-    specialization: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -518,7 +504,6 @@ async function handleRegister() {
         data: {
           first_name: form.firstName.trim(),
           last_name: form.lastName.trim(),
-          specialization: form.specialization.trim(),
         },
       },
     })
@@ -732,6 +717,7 @@ function goToLogin() {
   opacity: 0;
   transform: translateY(24px);
   transition: opacity .7s ease .2s, transform .7s ease .2s;
+  
 }
 .form-container.visible { opacity: 1; transform: translateY(0); }
 
@@ -913,10 +899,13 @@ function goToLogin() {
   transition: opacity .25s, transform .15s, box-shadow .25s;
   letter-spacing: .02em;
 }
+
+
 .submit-btn:hover:not(:disabled) {
   opacity: .93;
   transform: translateY(-1px);
   box-shadow: 0 8px 28px rgba(151, 151, 151, 0.4);
+  background-color: #357d76;
 }
 .submit-btn:active:not(:disabled) { transform: translateY(0); }
 .submit-btn:disabled { cursor: not-allowed; opacity: .7; }
@@ -1041,5 +1030,24 @@ background: linear-gradient(
     grid-template-columns: 1fr;
     gap: 0;
   }
+}
+
+.fade-register-enter-active,
+.fade-register-leave-active {
+  transition: opacity .45s ease;
+}
+
+.fade-register-enter-from,
+.fade-register-leave-to {
+  opacity: 0;
+}
+
+.fade-register-enter-to,
+.fade-register-leave-from {
+  opacity: 1;
+}
+
+.register-extra-fields {
+  overflow: hidden;
 }
 </style>
