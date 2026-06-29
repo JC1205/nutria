@@ -298,33 +298,11 @@
       </div>
 
       <!-- ══ TAB: Mediciones ══ -->
-      <div v-if="activeTab === 'measurements'" class="tab-pane">
-        <div class="card">
-          <h2 class="card-title">Historial de mediciones</h2>
-          <table class="meas-table">
-            <thead>
-              <tr>
-                <th>FECHA</th>
-                <th>PESO (kg)</th>
-                <th>CINTURA (cm)</th>
-                <th>CADERA (cm)</th>
-                <th>% GRASA</th>
-                <th>MASA MUSCULAR (kg)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="m in patient.measurements" :key="m.date">
-                <td>{{ formatDate(m.date) }}</td>
-                <td>{{ m.weight }}</td>
-                <td>{{ m.waist }}</td>
-                <td>{{ m.hip }}</td>
-                <td>{{ m.bodyFat }}%</td>
-                <td>{{ m.muscle }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <PatientMeasurementsSection
+  v-if="activeTab === 'measurements' && patient.id"
+  :patient-id="patient.id"
+  :patient-color="patient.color"
+/>
 
       <!-- ══ TAB: Citas ══ -->
       <div v-if="activeTab === 'appointments'" class="tab-pane">
@@ -806,6 +784,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToastStore } from '@/stores/toast.store'
+import PatientMeasurementsSection from '@/components/PatientMeasurementsSection.vue'
 import {
   ArrowLeft,
   Pencil,
@@ -2995,4 +2974,6 @@ onMounted(async () => {
     width: 100%;
   }
 }
+
+
 </style>

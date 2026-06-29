@@ -3201,7 +3201,7 @@ onMounted(async () => {
 }
 
 .plan-detail-modal .btn-save:hover:not(:disabled) {
-  background: #765f8b;
+  background: #357d76;
   transform: translateY(-1px);
 }
 
