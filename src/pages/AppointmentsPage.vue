@@ -174,18 +174,33 @@
                   </div>
 
                   <!-- Hora -->
-                  <div class="form-field">
-                    <label>Hora</label>
-                    <div class="input-wrapper">
-                      <Clock :size="15" class="field-ico" />
-                      <input
-                        v-model="form.time"
-                        type="time"
-                        :class="{ err: formErrors.time }"
-                      />
-                    </div>
-                    <span v-if="formErrors.time" class="field-err">{{ formErrors.time }}</span>
-                  </div>
+                 <div class="form-field">
+  <label>Hora</label>
+
+  <div class="time-manual-grid" :class="{ err: formErrors.time }">
+    <div class="input-wrapper">
+      <Clock :size="15" class="field-ico" />
+
+      <input
+        v-model="timeForm.time"
+        type="text"
+        inputmode="numeric"
+        maxlength="5"
+        placeholder="09:30"
+        @input="formatManualTime"
+      />
+    </div>
+
+    <div class="input-wrapper period-wrapper">
+      <select v-model="timeForm.period">
+        <option value="AM">AM</option>
+        <option value="PM">PM</option>
+      </select>
+    </div>
+  </div>
+
+  <span v-if="formErrors.time" class="field-err">{{ formErrors.time }}</span>
+</div>
 
                   <!-- Razón / Tipo -->
                   <div class="form-field full">
@@ -561,6 +576,9 @@ function selectDayFromAppt(appt: Appointment) {
   selectedDate.value = appt.date
 }
 
+
+
+
 /* ─────────────────────────────────────────────────────────
    HELPERS
 ───────────────────────────────────────────────────────── */
@@ -611,24 +629,28 @@ function openModal(appt?: Appointment) {
   clearErrors()
 
   if (appt) {
-    Object.assign(form, {
-      patientId: appt.patientId,
-      date: appt.date,
-      time: appt.time,
-      reason: appt.reason,
-      notes: appt.notes,
-      status: appt.status,
-    })
-  } else {
-    Object.assign(form, {
-      patientId: '',
-      date: selectedDateStr.value,
-      time: '',
-      reason: '',
-      notes: '',
-      status: 'pending',
-    })
-  }
+  Object.assign(form, {
+    patientId: appt.patientId,
+    date: appt.date,
+    time: appt.time,
+    reason: appt.reason,
+    notes: appt.notes,
+    status: appt.status,
+  })
+
+  fillTimeFormFrom24Hour(appt.time)
+} else {
+  Object.assign(form, {
+    patientId: '',
+    date: selectedDateStr.value,
+    time: '',
+    reason: '',
+    notes: '',
+    status: 'pending',
+  })
+
+  fillTimeFormFrom24Hour(null)
+}
 
   modal.open = true
 }
@@ -650,6 +672,8 @@ function openModalFromPatientQuery() {
     notes: '',
     status: 'pending',
   })
+
+  fillTimeFormFrom24Hour(null)
 
   modal.appt = null
   modal.open = true
@@ -685,10 +709,10 @@ function validate() {
     ok = false
   }
 
-  if (!form.time) {
-    formErrors.time = 'La hora es requerida.'
-    ok = false
-  }
+if (!to24HourTime()) {
+  formErrors.time = 'Ingresa una hora válida.'
+  ok = false
+}
 
   if (!form.reason) {
     formErrors.reason = 'Selecciona la razón.'
@@ -699,9 +723,15 @@ function validate() {
 }
 
 async function saveAppointment() {
+  const appointmentTime = to24HourTime()
+
   if (!validate()) return
 
+  form.time = appointmentTime
+
   const user = await ensureUser()
+
+  if (!validate()) return
 
   if (!user) {
     pageError.value = 'No hay una sesión activa.'
@@ -715,7 +745,7 @@ async function saveAppointment() {
     user_id: user.id,
     patient_id: form.patientId,
     appointment_date: form.date,
-    appointment_time: form.time,
+appointment_time: appointmentTime,
     reason: form.notes.trim()
       ? `${form.reason} - ${form.notes.trim()}`
       : form.reason,
@@ -751,6 +781,84 @@ async function saveAppointment() {
   } finally {
     saving.value = false
   }
+}
+
+const timeForm = reactive({
+  time: '',
+  period: 'AM' as 'AM' | 'PM',
+})
+
+const timeOptions = Array.from({ length: 12 * 4 }, (_, index) => {
+  const hour = Math.floor(index / 4) + 1
+  const minute = (index % 4) * 15
+
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
+})
+
+function formatManualTime() {
+  let value = timeForm.time.replace(/\D/g, '')
+
+  if (value.length > 4) {
+    value = value.slice(0, 4)
+  }
+
+  if (value.length >= 3) {
+    value = `${value.slice(0, 2)}:${value.slice(2)}`
+  }
+
+  timeForm.time = value
+}
+
+function isValidManualTime() {
+  const match = timeForm.time.match(/^(\d{1,2}):(\d{2})$/)
+
+  if (!match) return false
+
+  const hour = Number(match[1])
+  const minute = Number(match[2])
+
+  return hour >= 1 && hour <= 12 && minute >= 0 && minute <= 59
+}
+
+function to24HourTime() {
+  if (!isValidManualTime()) return ''
+
+  const [hourRaw, minuteRaw] = timeForm.time.split(':')
+
+  let hour = Number(hourRaw)
+  const minute = minuteRaw ?? '00'
+
+  if (timeForm.period === 'PM' && hour !== 12) {
+    hour += 12
+  }
+
+  if (timeForm.period === 'AM' && hour === 12) {
+    hour = 0
+  }
+
+  return `${String(hour).padStart(2, '0')}:${minute}:00`
+}
+
+function fillTimeFormFrom24Hour(time: string | null) {
+  if (!time) {
+    timeForm.time = ''
+    timeForm.period = 'AM'
+    return
+  }
+
+  const [hourRaw, minuteRaw] = time.split(':')
+  const hour24 = Number(hourRaw)
+  const minute = minuteRaw ?? '00'
+
+  timeForm.period = hour24 >= 12 ? 'PM' : 'AM'
+
+  let hour12 = hour24 % 12
+
+  if (hour12 === 0) {
+    hour12 = 12
+  }
+
+  timeForm.time = `${String(hour12).padStart(2, '0')}:${minute}`
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -1363,5 +1471,42 @@ onMounted(async () => {
   .form-grid { grid-template-columns: 1fr; }
   .status-selector { flex-direction: column; }
   .upcoming-grid { grid-template-columns: 1fr; }
+}
+
+
+.time-manual-grid {
+  display: grid;
+  grid-template-columns: 1fr 90px;
+  gap: .55rem;
+}
+
+.time-manual-grid.err .input-wrapper {
+  border-color: #ef4444;
+}
+
+.time-manual-grid .input-wrapper {
+  min-width: 0;
+}
+
+.period-wrapper select {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #0f1923;
+  font-family: inherit;
+  font-size: .9rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  appearance: none;
+}
+
+
+
+@media (max-width: 640px) {
+  .time-manual-grid {
+    grid-template-columns: 1fr 85px;
+  }
 }
 </style>

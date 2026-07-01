@@ -205,6 +205,50 @@
           </div>
         </div>
         <p class="calories-target">Meta: {{ caloricTarget }} kcal</p>
+        <div class="macro-target-editor compact">
+  <div class="macro-target-head">
+    <span>Objetivos</span>
+    <small>gramos/día</small>
+  </div>
+
+  <div class="macro-compact-row">
+    <label class="macro-mini protein-input">
+      <span>P</span>
+      <input
+        v-model.number="macroTargets.protein"
+        type="number"
+        min="0"
+        step="1"
+        @input="savePlanDraft"
+      />
+      <small>g</small>
+    </label>
+
+    <label class="macro-mini carbs-input">
+      <span>C</span>
+      <input
+        v-model.number="macroTargets.carbs"
+        type="number"
+        min="0"
+        step="1"
+        @input="savePlanDraft"
+      />
+      <small>g</small>
+    </label>
+
+    <label class="macro-mini fat-input">
+      <span>G</span>
+      <input
+        v-model.number="macroTargets.fat"
+        type="number"
+        min="0"
+        step="1"
+        @input="savePlanDraft"
+      />
+      <small>g</small>
+    </label>
+  </div>
+</div>
       </div>
 
       <!-- Macros -->
@@ -880,14 +924,10 @@ const editingMode = computed(() => !!editingMealPlanId.value)
 
 const toast = useToastStore()
 
-const macroTargets = computed(() => {
-  const calories = caloricTarget.value || 1800
-
-  return {
-    protein: Math.round((calories * 0.2) / 4),
-    carbs: Math.round((calories * 0.5) / 4),
-    fat: Math.round((calories * 0.3) / 9),
-  }
+const macroTargets = reactive({
+  protein: 120,
+  carbs: 220,
+  fat: 60,
 })
 
 const selectedPatientId = computed(() => {
@@ -1062,7 +1102,7 @@ function buildDays(daysCount: number): DayPlan[] {
 const days = ref<DayPlan[]>(buildDays(duration.value))
 
 watch(
-  [selectedPatient, duration, startDate, caloricTarget, generalRecommendations, days],
+  [selectedPatient, duration, startDate, caloricTarget, macroTargets, generalRecommendations, days],
   () => {
     savePlanDraft()
   },
@@ -1257,6 +1297,11 @@ function savePlanDraft() {
       duration: duration.value,
       startDate: startDate.value,
       caloricTarget: caloricTarget.value,
+      macroTargets: {
+  protein: macroTargets.protein,
+  carbs: macroTargets.carbs,
+  fat: macroTargets.fat,
+},
       generalRecommendations: generalRecommendations.value,
       activeDayIndex: activeDayIndex.value,
       days: cleanDays,
@@ -1278,6 +1323,9 @@ function loadPlanDraft() {
     duration.value = Number(draft.duration ?? duration.value)
     startDate.value = draft.startDate ?? startDate.value
     caloricTarget.value = Number(draft.caloricTarget ?? caloricTarget.value)
+    macroTargets.protein = Number(draft.macroTargets?.protein ?? macroTargets.protein)
+macroTargets.carbs = Number(draft.macroTargets?.carbs ?? macroTargets.carbs)
+macroTargets.fat = Number(draft.macroTargets?.fat ?? macroTargets.fat)
     generalRecommendations.value = draft.generalRecommendations ?? ''
 
     const baseDays = buildDays(duration.value)
@@ -1338,6 +1386,9 @@ function clearPlanDraft() {
   duration.value = 2
   startDate.value = new Date().toISOString().slice(0, 10)
   caloricTarget.value = 1800
+  macroTargets.protein = 120
+macroTargets.carbs = 220
+macroTargets.fat = 60
   generalRecommendations.value = ''
   activeDayIndex.value = 0
   editingMealPlanId.value = null
@@ -1445,13 +1496,12 @@ const caloriesPct = computed(() => {
   return Math.round((dayTotals.value.calories / caloricTarget.value) * 100)
 })
 
-function macroPct(key: 'protein' | 'carbs' | 'fat') {
-  const value = dayTotals.value[key]
-  const target = macroTargets.value[key]
+function macroPct(type: 'protein' | 'carbs' | 'fat') {
+  const target = macroTargets[type]
 
   if (!target) return 0
 
-  return Math.min(Math.round((value / target) * 100), 100)
+  return Math.min(Math.round((dayTotals.value[type] / target) * 100), 100)
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -3391,5 +3441,96 @@ onMounted(async () => {
 
 .btn-clear-plan {
   margin-left: auto;
+}
+
+
+.macro-target-editor.compact {
+  margin-top: .85rem;
+  padding-top: .8rem;
+  border-top: 1px solid #eef0f4;
+}
+
+.macro-target-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: .55rem;
+}
+
+.macro-target-head span {
+  font-size: .76rem;
+  font-weight: 700;
+  color: #0f1923;
+}
+
+.macro-target-head small {
+  font-size: .68rem;
+  font-weight: 750;
+  color: #98a2b3;
+}
+
+.macro-compact-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .45rem;
+}
+
+.macro-mini {
+  min-width: 0;
+  background: #f9fafb;
+  border: 1.5px solid #eef0f4;
+  border-radius: 12px;
+  padding: .45rem .4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+}
+
+.macro-mini span {
+  font-size: .72rem;
+  font-weight: 900;
+  color: #667085;
+}
+
+.macro-mini input {
+  width: 42px;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #0f1923;
+  font-size: .78rem;
+  font-weight: 850;
+  text-align: center;
+}
+
+.macro-mini input::-webkit-outer-spin-button,
+.macro-mini input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.macro-mini small {
+  font-size: .65rem;
+  color: #98a2b3;
+  font-weight: 800;
+}
+
+.macro-mini:focus-within {
+  background: #fff;
+  border-color: #3E9B92;
+  box-shadow: 0 0 0 3px rgba(62, 155, 146, .11);
+}
+
+.protein-input {
+  border-color: rgba(239, 68, 68, .18);
+}
+
+.carbs-input {
+  border-color: rgba(245, 158, 11, .22);
+}
+
+.fat-input {
+  border-color: rgba(59, 130, 246, .18);
 }
 </style>

@@ -160,6 +160,8 @@
               <tr>
                 <th>Fecha</th>
                 <th>Peso</th>
+                <th>Cintura</th>
+                <th>Cadera</th>
                 <th>Abdomen</th>
                 <th>Brazo</th>
                 <th>Brazo comp.</th>
@@ -174,6 +176,8 @@
               <tr v-for="item in measurements" :key="item.id">
                 <td>{{ formatDate(item.measured_at) }}</td>
                 <td>{{ value(item.weight_kg, 'kg') }}</td>
+                <td>{{ value(item.waist_cm, 'cm') }}</td>
+                <td>{{ value(item.hip_cm, 'cm') }}</td>
                 <td>{{ value(item.abdomen_cm, 'cm') }}</td>
                 <td>{{ value(item.arm_cm, 'cm') }}</td>
                 <td>{{ value(item.contracted_arm_cm, 'cm') }}</td>
@@ -185,6 +189,7 @@
                     <button @click="openEditModal(item)" title="Editar">
                       <Pencil :size="14" />
                     </button>
+
                     <button class="danger" @click="askDelete(item)" title="Eliminar">
                       <Trash2 :size="14" />
                     </button>
@@ -222,6 +227,16 @@
               <div class="form-field">
                 <label>Peso actual (kg)</label>
                 <input v-model.number="form.weight_kg" type="number" step="0.1" placeholder="70.5" />
+              </div>
+
+              <div class="form-field">
+                <label>Cintura (cm)</label>
+                <input v-model.number="form.waist_cm" type="number" step="0.1" placeholder="75" />
+              </div>
+
+              <div class="form-field">
+                <label>Cadera (cm)</label>
+                <input v-model.number="form.hip_cm" type="number" step="0.1" placeholder="95" />
               </div>
 
               <div class="form-field">
@@ -342,6 +357,8 @@ interface MeasurementRow {
   measured_at: string
   weight_kg: number | null
   abdomen_cm: number | null
+  waist_cm: number | null
+  hip_cm: number | null
   arm_cm: number | null
   contracted_arm_cm: number | null
   calf_cm: number | null
@@ -390,6 +407,8 @@ const form = reactive({
   measured_at: new Date().toISOString().slice(0, 10),
   weight_kg: null as number | null,
   abdomen_cm: null as number | null,
+  waist_cm: null as number | null,
+  hip_cm: null as number | null,
   arm_cm: null as number | null,
   contracted_arm_cm: null as number | null,
   calf_cm: null as number | null,
@@ -437,6 +456,8 @@ function resetForm() {
   Object.assign(form, {
     measured_at: new Date().toISOString().slice(0, 10),
     weight_kg: null,
+    waist_cm: null,
+    hip_cm: null,
     abdomen_cm: null,
     arm_cm: null,
     contracted_arm_cm: null,
@@ -462,6 +483,8 @@ function openEditModal(item: MeasurementRow) {
   Object.assign(form, {
     measured_at: item.measured_at,
     weight_kg: item.weight_kg,
+    waist_cm: item.waist_cm,
+    hip_cm: item.hip_cm,
     abdomen_cm: item.abdomen_cm,
     arm_cm: item.arm_cm,
     contracted_arm_cm: item.contracted_arm_cm,
@@ -532,6 +555,8 @@ async function saveMeasurement() {
     measured_at: form.measured_at,
 
     weight_kg: toNullableNumber(form.weight_kg),
+    waist_cm: toNullableNumber(form.waist_cm),
+    hip_cm: toNullableNumber(form.hip_cm),
     abdomen_cm: toNullableNumber(form.abdomen_cm),
     arm_cm: toNullableNumber(form.arm_cm),
     contracted_arm_cm: toNullableNumber(form.contracted_arm_cm),
@@ -984,7 +1009,7 @@ onMounted(loadMeasurements)
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 920px;
+  min-width: 1080px;
 }
 
 th {
