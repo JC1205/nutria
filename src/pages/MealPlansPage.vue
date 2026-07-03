@@ -1109,6 +1109,7 @@ watch(
   { deep: true },
 )
 
+
 const EMPTY_DAY: DayPlan = {
   label: 'Día',
   dateLabel: '',
@@ -1211,6 +1212,7 @@ function parseNumberFromText(text: string, fallback = 0) {
 
 function planFoodFromPortionNote(item: {
   id: string
+  food_id: string | null
   recipe_id: string | null
   portion_notes: string | null
 }): PlanFood {
@@ -1237,7 +1239,7 @@ function planFoodFromPortionNote(item: {
     : []
 
   return {
-    id: item.recipe_id ?? item.id,
+    id: item.recipe_id ?? item.food_id ?? item.id,
     group: item.recipe_id ? 'recipe' : 'guardado',
     name,
     quantity,
@@ -1424,7 +1426,7 @@ async function loadMealPlanForEdit(mealPlanId: string) {
 
   const { data: items, error: itemsError } = await supabase
     .from('meal_plan_items')
-    .select('id, recipe_id, day_number, meal_type, portion_notes, order_index')
+    .select('id, food_id, recipe_id, day_number, meal_type, portion_notes, order_index')
     .eq('meal_plan_id', mealPlanId)
     .order('day_number', { ascending: true })
     .order('order_index', { ascending: true })
@@ -1461,10 +1463,11 @@ async function loadMealPlanForEdit(mealPlanId: string) {
 
     meal.foods.push(
       planFoodFromPortionNote({
-        id: item.id,
-        recipe_id: item.recipe_id,
-        portion_notes: item.portion_notes,
-      }),
+  id: item.id,
+  food_id: item.food_id,
+  recipe_id: item.recipe_id,
+  portion_notes: item.portion_notes,
+}),
     )
   })
 
@@ -1515,6 +1518,7 @@ const foodGroups = ref<FoodGroupOption[]>([
 ])
 
 const allFoods = ref<FoodItem[]>([])
+
 
 function mapFood(row: FoodRow): FoodItem {
   return {
@@ -1582,6 +1586,58 @@ async function loadFoodData() {
 
   allFoods.value = ((foodsData ?? []) as FoodRow[]).map((food) => mapFood(food))
 }
+
+function syncPlanFoodsWithCatalog() {
+  const catalogById = new Map(allFoods.value.map((food) => [food.id, food]))
+
+  let hasChanges = false
+
+  days.value = days.value.map((day) => ({
+    ...day,
+    meals: day.meals.map((meal) => ({
+      ...meal,
+      foods: meal.foods.map((planFood) => {
+        if (planFood.source === 'recipe') return planFood
+
+        const updatedFood = catalogById.get(planFood.id)
+
+        if (!updatedFood) return planFood
+
+        const changed =
+          planFood.group !== updatedFood.group ||
+          planFood.name !== updatedFood.name ||
+          planFood.unit !== updatedFood.unit ||
+          planFood.weightG !== updatedFood.weightG ||
+          planFood.energyKcal !== updatedFood.energyKcal ||
+          planFood.proteinG !== updatedFood.proteinG ||
+          planFood.carbsG !== updatedFood.carbsG ||
+          planFood.lipidsG !== updatedFood.lipidsG
+
+        if (!changed) return planFood
+
+        hasChanges = true
+
+        return {
+          ...planFood,
+          group: updatedFood.group,
+          name: updatedFood.name,
+          unit: updatedFood.unit,
+          weightG: updatedFood.weightG,
+          energyKcal: updatedFood.energyKcal,
+          proteinG: updatedFood.proteinG,
+          carbsG: updatedFood.carbsG,
+          lipidsG: updatedFood.lipidsG,
+        }
+      }),
+    })),
+  }))
+
+if (hasChanges && !loadingDraft.value && !editingMode.value) {
+  savePlanDraft()
+}
+}
+
+
 
 /* ─────────────────────────────────────────────────────────
    RECETAS DESDE SUPABASE
@@ -1966,6 +2022,7 @@ async function savePlan() {
       day.meals.flatMap((meal) =>
         meal.foods.map((food, foodIndex) => ({
           meal_plan_id: mealPlanId,
+          food_id: food.source === 'food' ? food.id : null,
           recipe_id: food.source === 'recipe' ? food.recipeId ?? null : null,
           day_number: dayIndex + 1,
           meal_type: mealTypeForSupabase(meal.id),
@@ -2188,10 +2245,14 @@ onMounted(async () => {
 
   if (typeof queryMealPlanId === 'string') {
     await loadMealPlanForEdit(queryMealPlanId)
-  }
-
-  if (typeof queryMealPlanId !== 'string') {
+    syncPlanFoodsWithCatalog()
+  } else {
     loadPlanDraft()
+
+    await nextTick()
+
+    syncPlanFoodsWithCatalog()
+    savePlanDraft()
   }
 
   if (!days.value.length) {
