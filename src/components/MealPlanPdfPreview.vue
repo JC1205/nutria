@@ -81,12 +81,20 @@
               v-for="food in meal.foods"
               :key="food.uid"
             >
-              <li v-if="food.source !== 'recipe'">
+              <!-- Alimento normal -->
+              <li v-if="food.source === 'food' || !food.source">
                 {{ food.quantity }} {{ food.unit }} de {{ food.name }}
               </li>
 
+              <!-- Receta guardada o platillo rápido -->
               <li v-else>
-                {{ food.name }}
+                <span v-if="food.source === 'recipe'">
+                  {{ food.name }}
+                </span>
+
+                <span v-else>
+                  {{ food.name }}
+                </span>
 
                 <ul
                   v-if="food.adjustedIngredients?.length"
@@ -149,7 +157,7 @@ interface PlanFood {
   proteinG: number
   carbsG: number
   lipidsG: number
-  source?: 'food' | 'recipe'
+  source?: 'food' | 'recipe' | 'custom'
   recipeId?: string
   recipeName?: string
   adjustedIngredients?: string[]

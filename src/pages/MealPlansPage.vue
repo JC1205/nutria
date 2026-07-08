@@ -30,7 +30,7 @@
   {{ editingMode ? 'Actualizar' : 'Guardar' }}
 </button>
 
-<button type="button" class="btn-secondary btn-clear-plan" @click="clearPlanDraft">
+<button type="button" class="btn-secondary btn-clear-plan" @click="clearConfirmModal.open = true">
   Limpiar plan
 </button>
 </div>
@@ -312,27 +312,36 @@
             </div>
 
             <!-- Tabs: Alimentos / Recetas -->
-            <div class="source-tabs">
-              <button
-                class="source-tab"
-                :class="{ active: pickerSource === 'foods' }"
-                @click="switchSource('foods')"
-              >
-                <Apple :size="15" /> Alimentos
-              </button>
-              <button
-                class="source-tab"
-                :class="{ active: pickerSource === 'recipes' }"
-                @click="switchSource('recipes')"
-              >
-                <ChefHat :size="15" /> Recetas guardadas
-              </button>
-            </div>
+              <div class="source-tabs">
+                <button
+                  class="source-tab"
+                  :class="{ active: pickerSource === 'foods' }"
+                  @click="switchSource('foods')"
+                >
+                  <Apple :size="15" /> Alimentos
+                </button>
+
+                <button
+                  class="source-tab"
+                  :class="{ active: pickerSource === 'recipes' }"
+                  @click="switchSource('recipes')"
+                >
+                  <ChefHat :size="15" /> Recetas guardadas
+                </button>
+
+                <button
+                  class="source-tab"
+                  :class="{ active: pickerSource === 'quick' }"
+                  @click="switchSource('quick')"
+                >
+                  <Plus :size="15" /> Platillo rápido
+                </button>
+              </div>
 
             <div class="modal-body">
 
               <!-- ══ Vista: lista (alimentos o recetas) ══ -->
-              <template v-if="!pickerSelectedFood && !pickerSelectedRecipe">
+              <template v-if="!pickerSelectedFood && !pickerSelectedRecipe && pickerSource !== 'quick'">
 
                 <!-- Búsqueda -->
                 <div class="picker-search">
@@ -443,6 +452,98 @@
                   </div>
                 </div>
               </Transition>
+
+              <template v-if="pickerSource === 'quick'">
+  <div class="quick-dish-step">
+
+    <div class="quick-dish-name">
+      <label>Nombre del platillo</label>
+      <input
+        v-model="quickDishName"
+        type="text"
+        placeholder="Ingresa el nombre del platillo..."
+      />
+    </div>
+
+    <div class="picker-search">
+      <Search :size="15" class="ps-ico" />
+      <input
+        v-model="quickDishSearch"
+        type="text"
+        placeholder="Buscar ingrediente guardado..."
+      />
+    </div>
+
+    <div class="quick-food-results">
+      <button
+        v-for="food in quickDishFoodResults"
+        :key="food.id"
+        class="quick-food-option"
+        @click="addQuickDishIngredient(food)"
+      >
+        <div>
+          <strong>{{ food.name }}</strong>
+          <span>{{ food.quantity }} {{ food.unit }} · {{ food.energyKcal }} kcal</span>
+        </div>
+
+        <Plus :size="14" />
+      </button>
+    </div>
+
+    <div class="quick-ingredients-box">
+      <div class="quick-ingredients-head">
+        <span>Ingredientes agregados</span>
+        <small>{{ quickDishIngredients.length }}</small>
+      </div>
+
+      <div v-if="!quickDishIngredients.length" class="quick-empty">
+        <Inbox :size="18" />
+        <p>Agrega ingredientes desde tus alimentos guardados.</p>
+      </div>
+
+      <div
+        v-for="(item, index) in quickDishIngredients"
+        :key="item.food.id"
+        class="quick-ingredient-row"
+      >
+        <div class="quick-ing-info">
+          <strong>{{ item.food.name }}</strong>
+          <span>{{ item.food.unit }}</span>
+        </div>
+
+        <input
+  v-model="item.quantityText"
+  type="text"
+  inputmode="decimal"
+  placeholder="1/2"
+  class="quick-ing-qty"
+/>
+
+        <button class="quick-remove" @click="removeQuickDishIngredient(index)">
+          <X :size="13" />
+        </button>
+      </div>
+    </div>
+
+    <div class="qs-preview quick-preview">
+      ≈ {{ Math.round(quickDishTotals.calories) }} kcal ·
+      P {{ quickDishTotals.protein.toFixed(1) }}g ·
+      C {{ quickDishTotals.carbs.toFixed(1) }}g ·
+      G {{ quickDishTotals.fat.toFixed(1) }}g
+    </div>
+
+    <div class="qs-actions">
+      <button class="btn-secondary" @click="resetQuickDish">
+        Limpiar
+      </button>
+
+      <button class="btn-primary" @click="confirmAddQuickDish">
+        <Check :size="14" />
+        Agregar platillo
+      </button>
+    </div>
+  </div>
+</template>
 
               <!-- ══ Vista: cantidad por ingrediente de una receta ══ -->
               <Transition name="fade">
@@ -751,6 +852,57 @@
   </div>
 </Transition>
 
+<!-- ══════════════════════════════════════════════════════
+     MODAL: Confirmar limpiar plan
+══════════════════════════════════════════════════════ -->
+<Transition name="modal-fade">
+  <div
+    v-if="clearConfirmModal.open"
+    class="modal-overlay"
+    @click.self="clearConfirmModal.open = false"
+  >
+    <Transition name="modal-slide">
+      <div v-if="clearConfirmModal.open" class="modal-card confirm-clear-modal">
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <div class="modal-icon-box danger-icon">
+              <X :size="18" />
+            </div>
+
+            <div>
+              <h2 class="modal-title">Limpiar plan</h2>
+              <p class="modal-sub">
+                Esta acción eliminará los datos capturados en este plan.
+              </p>
+            </div>
+          </div>
+
+          <button class="modal-close" @click="clearConfirmModal.open = false">
+            <X :size="18" />
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <p class="confirm-clear-text">
+            ¿Estás seguro de que deseas borrar el plan actual? Se eliminarán los alimentos,
+            recetas, platillos rápidos, recomendaciones y datos del borrador.
+          </p>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-secondary" @click="clearConfirmModal.open = false">
+            Cancelar
+          </button>
+
+          <button class="btn-danger" @click="clearPlanDraft">
+            Sí, limpiar plan
+          </button>
+        </div>
+      </div>
+    </Transition>
+  </div>
+</Transition>
+
   </div>
 </template>
 
@@ -829,7 +981,7 @@ interface FoodItem {
 
 interface PlanFood extends FoodItem {
   uid: string
-  source?: 'food' | 'recipe'
+  source?: 'food' | 'recipe' | 'custom'
   recipeId?: string
   recipeName?: string
   adjustedIngredients?: string[]
@@ -872,6 +1024,11 @@ interface RecipeIngredientQty {
   label: string
   multiplier: number
   editing: boolean
+}
+
+interface QuickDishIngredient {
+  food: FoodItem
+  quantityText: string
 }
 
 interface Meal {
@@ -924,6 +1081,7 @@ const editingMode = computed(() => !!editingMealPlanId.value)
 
 const toast = useToastStore()
 
+
 const macroTargets = reactive({
   protein: 120,
   carbs: 220,
@@ -937,6 +1095,10 @@ const selectedPatientId = computed(() => {
 })
 
 const pdfPreviewModal = reactive({
+  open: false,
+})
+
+const clearConfirmModal = reactive({
   open: false,
 })
 
@@ -1243,13 +1405,13 @@ function planFoodFromPortionNote(item: {
     group: item.recipe_id ? 'recipe' : 'guardado',
     name,
     quantity,
-    unit,
+    unit: ingredientsText && !item.food_id && !item.recipe_id ? 'platillo' : unit,
     weightG: 0,
     energyKcal: parseNumberFromText(kcalText, 0),
     proteinG: parseNumberFromText(proteinText, 0),
     carbsG: parseNumberFromText(carbsText, 0),
     lipidsG: parseNumberFromText(fatText, 0),
-    source: item.recipe_id ? 'recipe' : 'food',
+    source: item.recipe_id ? 'recipe' : item.food_id ? 'food' : ingredientsText ? 'custom' : 'food',
     recipeId: item.recipe_id ?? undefined,
     recipeName: item.recipe_id ? name : undefined,
     adjustedIngredients,
@@ -1398,6 +1560,8 @@ macroTargets.fat = 60
   
 
   days.value = buildDays(duration.value)
+
+  clearConfirmModal.open = false
 
   toast.info('Borrador limpiado.')
 }
@@ -1597,7 +1761,7 @@ function syncPlanFoodsWithCatalog() {
     meals: day.meals.map((meal) => ({
       ...meal,
       foods: meal.foods.map((planFood) => {
-        if (planFood.source === 'recipe') return planFood
+        if (planFood.source === 'recipe' || planFood.source === 'custom') return planFood
 
         const updatedFood = catalogById.get(planFood.id)
 
@@ -1746,13 +1910,16 @@ function openPlanDetail() {
   planDetailModal.open = true
 }
 
-const pickerSource = ref<'foods' | 'recipes'>('foods')
+const pickerSource = ref<'foods' | 'recipes' | 'quick'>('foods')
 const pickerSearch = ref('')
 const pickerGroup = ref('all')
 const pickerRecipeCategory = ref('Todas')
 
 const pickerSelectedFood = ref<FoodItem | null>(null)
 const pickerSelectedRecipe = ref<Recipe | null>(null)
+const quickDishName = ref('')
+const quickDishSearch = ref('')
+const quickDishIngredients = ref<QuickDishIngredient[]>([])
 
 const pickerQty = ref(1)
 const recipeIngredientQtys = ref<RecipeIngredientQty[]>([])
@@ -1771,6 +1938,8 @@ function openFoodPicker(meal: Meal) {
   pickerSelectedRecipe.value = null
   recipeIngredientQtys.value = []
   pickerQty.value = 1
+
+  resetQuickDish()
 }
 
 function closeFoodPicker() {
@@ -1779,14 +1948,17 @@ function closeFoodPicker() {
   pickerSelectedFood.value = null
   pickerSelectedRecipe.value = null
   recipeIngredientQtys.value = []
+
+  resetQuickDish()
 }
 
-function switchSource(source: 'foods' | 'recipes') {
+function switchSource(source: 'foods' | 'recipes' | 'quick') {
   pickerSource.value = source
   pickerSearch.value = ''
   pickerSelectedFood.value = null
   pickerSelectedRecipe.value = null
   recipeIngredientQtys.value = []
+  resetQuickDish()
 }
 
 const pickerFoodResults = computed(() => {
@@ -1819,6 +1991,37 @@ const pickerRecipeResults = computed(() => {
   }
 
   return list
+})
+
+const quickDishFoodResults = computed(() => {
+  const query = quickDishSearch.value.toLowerCase().trim()
+
+  if (!query) return allFoods.value.slice(0, 8)
+
+  return allFoods.value
+    .filter((food) => food.name.toLowerCase().includes(query))
+    .slice(0, 8)
+})
+
+const quickDishTotals = computed(() => {
+  return quickDishIngredients.value.reduce(
+    (totals, item) => {
+      const quantity = parseQuantityInput(item.quantityText)
+
+      totals.calories += item.food.energyKcal * quantity
+      totals.protein += item.food.proteinG * quantity
+      totals.carbs += item.food.carbsG * quantity
+      totals.fat += item.food.lipidsG * quantity
+
+      return totals
+    },
+    {
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0,
+    },
+  )
 })
 
 function selectPickerFood(food: FoodItem) {
@@ -1915,6 +2118,91 @@ function removeFood(meal: Meal, index: number) {
   savePlanDraft()
 }
 
+
+function resetQuickDish() {
+  quickDishName.value = ''
+  quickDishSearch.value = ''
+  quickDishIngredients.value = []
+}
+
+function addQuickDishIngredient(food: FoodItem) {
+  const existing = quickDishIngredients.value.find((item) => item.food.id === food.id)
+
+  if (existing) {
+    const currentQuantity = parseQuantityInput(existing.quantityText)
+    existing.quantityText = String(Number((currentQuantity + 1).toFixed(2)))
+    return
+  }
+
+  quickDishIngredients.value.push({
+    food,
+    quantityText: '1',
+  })
+}
+
+function removeQuickDishIngredient(index: number) {
+  quickDishIngredients.value.splice(index, 1)
+}
+
+function confirmAddQuickDish() {
+  if (!foodPicker.meal) return
+
+  if (!quickDishName.value.trim()) {
+    toast.error('Escribe el nombre del platillo.')
+    return
+  }
+
+  if (!quickDishIngredients.value.length) {
+    toast.error('Agrega al menos un ingrediente.')
+    return
+  }
+
+  const totals = quickDishTotals.value
+
+  foodPicker.meal.foods.push({
+    id: `custom-${Date.now()}`,
+    group: 'custom',
+    name: quickDishName.value.trim(),
+    quantity: 1,
+    unit: 'platillo',
+    weightG: 0,
+    energyKcal: Number(totals.calories.toFixed(1)),
+    proteinG: Number(totals.protein.toFixed(1)),
+    carbsG: Number(totals.carbs.toFixed(1)),
+    lipidsG: Number(totals.fat.toFixed(1)),
+    source: 'custom',
+    adjustedIngredients: quickDishIngredients.value.map((item) => {
+      return `${item.food.name} - ${item.quantityText} ${item.food.unit}`
+    }),
+    uid: `custom-${Date.now()}`,
+  })
+
+  savePlanDraft()
+  resetQuickDish()
+  closeFoodPicker()
+}
+
+function parseQuantityInput(value: string) {
+  const cleanValue = value.trim().replace(',', '.')
+
+  if (!cleanValue) return 0
+
+  if (cleanValue.includes('/')) {
+    const [top, bottom] = cleanValue.split('/')
+
+    const numerator = Number(top)
+    const denominator = Number(bottom)
+
+    if (!numerator || !denominator) return 0
+
+    return numerator / denominator
+  }
+
+  const numberValue = Number(cleanValue)
+
+  return Number.isFinite(numberValue) ? numberValue : 0
+}
+
 /* ─────────────────────────────────────────────────────────
    GUARDAR PLAN
 ───────────────────────────────────────────────────────── */
@@ -1931,6 +2219,20 @@ function mealTypeForSupabase(mealId: string) {
 }
 
 function buildPortionNotes(food: PlanFood) {
+  if (food.source === 'custom') {
+  const ingredientsText = food.adjustedIngredients?.length
+    ? ` | Ingredientes: ${food.adjustedIngredients.join('; ')}`
+    : ''
+
+  return `${food.name} | ${Number(food.quantity.toFixed(2))} platillo | ${Math.round(
+    food.energyKcal * food.quantity,
+  )} kcal | P ${Number((food.proteinG * food.quantity).toFixed(1))}g | C ${Number(
+    (food.carbsG * food.quantity).toFixed(1),
+  )}g | G ${Number((food.lipidsG * food.quantity).toFixed(1))}g${ingredientsText}`
+}
+
+
+
   if (food.source === 'recipe') {
   const ingredientsText = food.adjustedIngredients?.length
     ? ` | Ingredientes: ${food.adjustedIngredients.join('; ')}`
@@ -3593,5 +3895,230 @@ onMounted(async () => {
 
 .fat-input {
   border-color: rgba(59, 130, 246, .18);
+}
+
+.quick-dish-step {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 10px;
+}
+
+
+.quick-dish-name label {
+  display: block;
+  color: #667085;
+  font-size: .78rem;
+  font-weight: 800;
+  margin-bottom: .4rem;
+}
+
+.quick-dish-name input {
+  width: 95%;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 14px;
+  padding: .82rem .9rem;
+  background: #f9fafb;
+  color: #0f1923;
+  outline: none;
+  font-family: inherit;
+  margin-bottom: 10px;
+}
+
+.quick-dish-name input:focus {
+  background: #fff;
+  border-color: #3E9B92;
+  box-shadow: 0 0 0 4px rgba(62, 155, 146, .12);
+}
+
+.quick-food-results {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: .55rem;
+  max-height: 170px;
+  overflow-y: auto;
+}
+
+.quick-food-option {
+  border: 1.5px solid #eef0f4;
+  background: #fff;
+  border-radius: 14px;
+  padding: .75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .7rem;
+  cursor: pointer;
+  transition: .2s ease;
+  text-align: left;
+}
+
+.quick-food-option:hover {
+  border-color: #3E9B92;
+  background: #f4fbfa;
+}
+
+.quick-food-option strong {
+  display: block;
+  color: #0f1923;
+  font-size: .82rem;
+  font-weight: 600;
+}
+
+.quick-food-option span {
+  display: block;
+  color: #8a98a8;
+  font-size: .72rem;
+  margin-top: .2rem;
+}
+
+.quick-ingredients-box {
+  border: 1.5px solid #eef0f4;
+  border-radius: 16px;
+  background: #fcfcfd;
+  overflow: hidden;
+}
+
+.quick-ingredients-head {
+  padding: .75rem .9rem;
+  border-bottom: 1px solid #eef0f4;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.quick-ingredients-head span {
+  font-size: .78rem;
+  font-weight: 700;
+  color: #0f1923;
+}
+
+.quick-ingredients-head small {
+  color: #98a2b3;
+  font-weight: 700;
+}
+
+.quick-empty {
+  padding: 1.2rem;
+  text-align: center;
+  color: #98a2b3;
+  display: grid;
+  place-items: center;
+  gap: .35rem;
+}
+
+.quick-empty p {
+  font-size: .78rem;
+}
+
+.quick-ingredient-row {
+  padding: .7rem .9rem;
+  display: grid;
+  grid-template-columns: 1fr 82px 32px;
+  gap: .6rem;
+  align-items: center;
+  border-top: 1px solid #eef0f4;
+}
+
+.quick-ing-info strong {
+  color: #0f1923;
+  font-size: .82rem;
+  font-weight: 600;
+  display: block;
+}
+
+.quick-ing-info span {
+  color: #8a98a8;
+  font-size: .72rem;
+}
+
+.quick-ing-qty {
+  width: 100%;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 11px;
+  padding: .45rem;
+  text-align: center;
+  font-weight: 600;
+  outline: none;
+}
+
+.quick-ing-qty:focus {
+  border-color: #3E9B92;
+  box-shadow: 0 0 0 3px rgba(62, 155, 146, .1);
+}
+
+.quick-remove {
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 10px;
+  background: #fff1f2;
+  color: #e11d48;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+.quick-preview {
+  background: #f4fbfa;
+  border: 1px solid #dcefed;
+}
+
+@media (max-width: 720px) {
+  .quick-food-results {
+    grid-template-columns: 1fr;
+  }
+}
+
+.confirm-clear-modal {
+  max-width: 460px;
+}
+
+.confirm-clear-modal .modal-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: .75rem;
+  padding: 1rem 1.4rem 1.4rem;
+}
+
+.confirm-clear-modal .modal-footer button {
+  min-width: 140px;
+  justify-content: center;
+}
+
+.danger-icon {
+  background: #fff1f2 !important;
+  color: #e11d48 !important;
+}
+
+.confirm-clear-text {
+  color: #4b5563;
+  font-size: .9rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.btn-danger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 11px;
+  background: #e11d48;
+  color: #fff;
+  font-family: inherit;
+  font-size: .86rem;
+  font-weight: 750;
+  cursor: pointer;
+  transition: .2s ease;
+}
+
+.btn-danger:hover {
+  background: #be123c;
+  transform: translateY(-1px);
 }
 </style>
