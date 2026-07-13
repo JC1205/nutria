@@ -1255,26 +1255,109 @@ onMounted(async () => {
 .ms-label { font-size: .73rem; color: #9ca3af; margin-top: 3px; font-weight: 500; }
 
 /* ══════════════════════════════════════════════════════════
-   ANIMACIONES
+    ANIMACIONES
 ══════════════════════════════════════════════════════════ */
 @keyframes fadeDown { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:translateY(0); } }
 @keyframes fadeUp   { from { opacity:0; transform:translateY(14px);  } to { opacity:1; transform:translateY(0); } }
 
+
 /* ══════════════════════════════════════════════════════════
-   RESPONSIVE
+    RESPONSIVE
 ══════════════════════════════════════════════════════════ */
+
+/* ── Tablet / sidebar oculto ─────────────────────────────── */
 @media (max-width: 1100px) {
   .kpi-grid       { grid-template-columns: repeat(2, 1fr); }
   .mini-stats-row { grid-template-columns: repeat(2, 1fr); }
   .mid-row        { grid-template-columns: 1fr; }
   .bottom-row     { grid-template-columns: 1fr; }
 }
-@media (max-width: 640px) {
-  .dashboard      { padding: 1.2rem 1rem; }
-  .welcome-title  { font-size: 1.4rem; }
-  .kpi-grid       { grid-template-columns: 1fr 1fr; }
-  .kpi-value      { font-size: 1.6rem; }
-  .welcome-row    { flex-direction: column; align-items: flex-start; }
+
+/* ── Móvil — sidebar desaparece, aparece hamburguesa ─────── */
+@media (max-width: 767px) {
+  .dashboard {
+    padding: 3.5rem 1rem 1.8rem;
+    gap: 1rem;
+  }
+
+  /* Welcome: columna, badge debajo */
+  .welcome-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .5rem;
+  }
+
+  .welcome-title {
+    font-size: 1.35rem;
+    line-height: 1.25;
+  }
+
+  .welcome-name {
+    /* Si el nombre es largo se parte en línea propia */
+    display: inline;
+  }
+
+  .welcome-sub { font-size: .82rem; }
+
+  .welcome-date-badge {
+    align-self: flex-start;
+    font-size: .74rem;
+    padding: 5px 12px;
+  }
+
+  /* KPI 2 columnas */
+  .kpi-grid { grid-template-columns: 1fr 1fr; gap: .7rem; }
+  .kpi-card { padding: 1rem 1rem .9rem; }
+  .kpi-value { font-size: 1.75rem; }
+  .kpi-icon  { width: 36px; height: 36px; border-radius: 10px; }
+
+  /* Mini stats 2 columnas */
+  .mini-stats-row { grid-template-columns: 1fr 1fr; gap: .7rem; }
+  .mini-stat { padding: .9rem 1rem; gap: 10px; }
+  .ms-icon-box { width: 34px; height: 34px; border-radius: 9px; }
+  .ms-value { font-size: 1.15rem; }
+
+  /* Acciones rápidas: 2 columnas en tablet */
+  .quick-actions { display: grid; grid-template-columns: 1fr 1fr; }
+
+  /* Chart controls se envuelven */
+  .chart-controls { flex-wrap: wrap; gap: 5px; }
+}
+
+/* ── Móvil pequeño ────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .dashboard { padding: 4.8rem .85rem 1.4rem; gap: .85rem; }
+
+  .welcome-title { font-size: 1.18rem; }
+
+  /* KPI: mantener 2 columnas, más compacto */
+  .kpi-grid { gap: .55rem; }
+  .kpi-card { padding: .9rem .9rem .85rem; }
+  .kpi-value { font-size: 1.55rem; }
+  .kpi-label { font-size: .76rem; }
+  .kpi-delta { font-size: .68rem; margin-top: 4px; }
+
+  /* Mini stats: 2 columnas */
+  .mini-stats-row { gap: .55rem; }
+  .mini-stat { padding: .8rem .9rem; }
+  .ms-value { font-size: 1.05rem; }
+  .ms-label { font-size: .68rem; }
+
+  /* Acciones rápidas: 1 columna */
+  .quick-actions { grid-template-columns: 1fr; }
+  .qa-btn { font-size: .82rem; }
+
+  /* Citas: ocultar tipo de consulta para ganar espacio */
+  .appt-type { display: none; }
+  .appt-time-box { min-width: 42px; font-size: .7rem; }
+  .appt-name { font-size: .82rem; }
+
+  /* Pacientes: ocultar barra de progreso */
+  .p-progress-wrap { display: none; }
+  .p-name { font-size: .82rem; }
+
+  /* Growth pill */
+  .growth-pill { font-size: .68rem; padding: 4px 9px; }
 }
 
 .kpi-delta {

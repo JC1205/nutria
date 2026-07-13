@@ -1613,17 +1613,110 @@ watch(
 .fade-enter-from,   .fade-leave-to     { opacity: 0; }
 
 
+/* ── Responsive — reemplaza el bloque @media al final del style scoped ── */
 
-
-/* ── Responsive ───────────────────────────────────────────── */
+/* ── Tablet ───────────────────────────────────────────────── */
 @media (max-width: 900px) {
-  .patients-page { padding: 1.4rem 1rem; }
-  .page-title { font-size: 1.5rem; }
-  .td-appt, .td-sex { display: none; }
+  .patients-page { padding: 1.4rem 1.2rem; }
+  .page-title    { font-size: 1.35rem; }
+  .page-subtitle { font-size: .82rem; }
+
+  /* Acciones siempre visibles en touch */
+  .row-actions { opacity: 1; }
 }
-@media (max-width: 600px) {
-  .toolbar { flex-direction: column; align-items: stretch; }
-  .search-wrapper { max-width: 100%; }
-  .form-grid { grid-template-columns: 1fr; }
+
+/* ── Móvil ────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .patients-page { padding: 3.5rem 1rem 1.8rem; }
+
+  /* Header en columna */
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .75rem;
+    margin-bottom: .9rem;
+  }
+
+  .btn-add {
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  /* Toolbar: búsqueda + filtro en la MISMA fila, results debajo */
+  .toolbar {
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .search-wrapper {
+    flex: 1;
+    min-width: 0;
+    max-width: unset; /* quita el límite de 420px de desktop */
+  }
+
+  /* El botón de filtrar queda inmediatamente después del input */
+  .filter-group { flex-shrink: 0; }
+
+  /* Contador pasa a su propia fila */
+  .results-count {
+    width: 100%;
+    margin-left: 0;
+    font-size: .78rem;
+  }
+
+  /* ─── TABLA MÓVIL: solo Nombre · Edad · Estado ─── */
+
+  /* Ocultar cabeceras de columnas que no necesitamos */
+  .patients-table thead th:nth-child(3),
+  .patients-table thead th:nth-child(4),
+  .patients-table thead th:nth-child(5),
+  .patients-table thead th:nth-child(6),
+  .patients-table thead th:nth-child(8) { display: none; }
+
+  /* Ocultar celdas: sexo(3) · peso actual(4) · peso meta(5) · cita(6) · acciones(8) */
+  .patient-row td:nth-child(3),
+  .patient-row td:nth-child(4),
+  .patient-row td:nth-child(5),
+  .patient-row td:nth-child(6),
+  .patient-row td:nth-child(8) { display: none; }
+
+  /* Celdas más compactas */
+  .td { padding: 12px 10px; font-size: .84rem; }
+  .th { padding: 11px 10px; }
+
+  .avatar       { width: 30px; height: 30px; font-size: .7rem; }
+  .patient-name { font-size: .84rem; }
+  .status-badge { font-size: .7rem; padding: 3px 9px; }
+
+  /* Acciones siempre visibles en touch */
+  .row-actions { opacity: 1; }
 }
+
+/* ── Móvil pequeño ────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .patients-page { padding: 3rem .75rem 1.4rem; }
+
+  .modal-overlay { padding: .75rem; }
+  .modal-card    { border-radius: 16px; max-height: 95vh; }
+
+  .form-grid   { grid-template-columns: 1fr; }
+  .detail-grid { grid-template-columns: 1fr; }
+
+  .modal-footer  { flex-direction: column-reverse; }
+  .btn-secondary,
+  .btn-primary,
+  .btn-danger    { width: 100%; justify-content: center; }
+}
+
+@media (max-width: 767px) {
+  .filter-menu {
+    left: auto;
+    right: 0;
+    min-width: 180px;
+    max-width: calc(100vw - 2rem);
+  }
+}
+
 </style>

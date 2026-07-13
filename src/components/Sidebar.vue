@@ -397,7 +397,7 @@ async function handleSignOut() {
   justify-content: center;
   gap: 5px;
   padding: 0;
-  transition: background .2s;
+  transition: background .2s, opacity .2s ease;
 }
 .hamburger-btn:hover { background: #f6faf9; }
 
@@ -413,6 +413,11 @@ async function handleSignOut() {
 .hamburger-btn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .hamburger-btn.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
 .hamburger-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+.hamburger-btn.open {
+  opacity: 0;
+  pointer-events: none;
+}
 
 @media (max-width: 767px) {
   .hamburger-btn { display: flex; }
