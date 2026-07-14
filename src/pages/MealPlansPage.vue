@@ -146,6 +146,13 @@
                   <span class="fmac">C {{ food.carbsG }}g</span>
                   <span class="fmac">G {{ food.lipidsG }}g</span>
                 </div>
+                  <button
+    v-if="food.source === 'custom'"
+    class="edit-food-btn"
+    @click="openQuickDishEdit(meal, fi)"
+  >
+    <Pencil :size="14" />
+  </button>
                 <button class="remove-food-btn" @click="removeFood(meal, fi)">
                   <X :size="14" />
                 </button>
@@ -902,7 +909,15 @@
     </Transition>
   </div>
 </Transition>
-
+<QuickDishEditModal
+  :open="quickDishEditModal.open"
+  :name="editingDishName"
+  :ingredients="editingDishIngredients"
+  :all-foods="allFoods"
+  @close="closeQuickDishEdit"
+  @save="handleQuickDishSave"
+  @delete="handleQuickDishDelete"
+/>
   </div>
 </template>
 
@@ -911,6 +926,7 @@ import { computed, onMounted, reactive, ref, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import MealPlanPdfPreview from '@/components/MealPlanPdfPreview.vue'
 import { useToastStore } from '@/stores/toast.store'
+import QuickDishEditModal from '@/components/MealItemEditorModal.vue'
 import {
   Printer,
   Save,
@@ -933,7 +949,7 @@ import {
   Cookie,
   Moon,
   ChefHat,
-  Minus,
+  Minus,Pencil,
 } from 'lucide-vue-next'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth.store'
@@ -985,6 +1001,7 @@ interface PlanFood extends FoodItem {
   recipeId?: string
   recipeName?: string
   adjustedIngredients?: string[]
+  quickIngredients?: { food: FoodItem; quantityText: string }[]
 }
 
 interface RecipeRow {
@@ -1047,6 +1064,8 @@ interface DayPlan {
   fullDate: string
   meals: Meal[]
 }
+
+
 
 /* ─────────────────────────────────────────────────────────
    STORE / ROUTE
@@ -2174,6 +2193,10 @@ function confirmAddQuickDish() {
     adjustedIngredients: quickDishIngredients.value.map((item) => {
       return `${item.food.name} - ${item.quantityText} ${item.food.unit}`
     }),
+      quickIngredients: quickDishIngredients.value.map((item) => ({
+    food: item.food,
+    quantityText: item.quantityText,
+  })),
     uid: `custom-${Date.now()}`,
   })
 
@@ -2202,6 +2225,8 @@ function parseQuantityInput(value: string) {
 
   return Number.isFinite(numberValue) ? numberValue : 0
 }
+
+
 
 /* ─────────────────────────────────────────────────────────
    GUARDAR PLAN
@@ -2351,7 +2376,77 @@ toast.success(editingMode.value ? 'Plan guardado correctamente.' : 'Plan guardad
   }
 }
 
+const quickDishEditModal = reactive<{ open: boolean; meal: Meal | null; foodIndex: number }>({
+  open: false,
+  meal: null,
+  foodIndex: -1,
+})
+const editingDishName = ref('')
+const editingDishIngredients = ref<{ food: FoodItem; quantityText: string }[]>([])
 
+function openQuickDishEdit(meal: Meal, index: number) {
+  const food = meal.foods[index]
+  if (!food || food.source !== 'custom') return
+
+  quickDishEditModal.meal = meal
+  quickDishEditModal.foodIndex = index
+  editingDishName.value = food.name
+  editingDishIngredients.value = food.quickIngredients ?? []
+  quickDishEditModal.open = true
+}
+
+function closeQuickDishEdit() {
+  quickDishEditModal.open = false
+  quickDishEditModal.meal = null
+  quickDishEditModal.foodIndex = -1
+}
+
+function handleQuickDishSave(payload: { name: string; ingredients: { food: FoodItem; quantityText: string }[] }) {
+  const meal = quickDishEditModal.meal
+  const index = quickDishEditModal.foodIndex
+  if (!meal || index < 0) return
+
+  const existingFood = meal.foods[index]
+  if (!existingFood) return // ← agrega este chequeo
+
+  const totals = payload.ingredients.reduce(
+    (acc, item) => {
+      const qty = parseQuantityInput(item.quantityText)
+      acc.calories += item.food.energyKcal * qty
+      acc.protein += item.food.proteinG * qty
+      acc.carbs += item.food.carbsG * qty
+      acc.fat += item.food.lipidsG * qty
+      return acc
+    },
+    { calories: 0, protein: 0, carbs: 0, fat: 0 },
+  )
+
+  meal.foods[index] = {
+    ...existingFood, // ← spread sobre la constante, no sobre meal.foods[index]
+    name: payload.name,
+    energyKcal: Number(totals.calories.toFixed(1)),
+    proteinG: Number(totals.protein.toFixed(1)),
+    carbsG: Number(totals.carbs.toFixed(1)),
+    lipidsG: Number(totals.fat.toFixed(1)),
+    quickIngredients: payload.ingredients,
+    adjustedIngredients: payload.ingredients.map(
+      (item) => `${item.food.name} - ${item.quantityText} ${item.food.unit}`,
+    ),
+  }
+
+  savePlanDraft()
+  closeQuickDishEdit()
+}
+
+function handleQuickDishDelete() {
+  const meal = quickDishEditModal.meal
+  const index = quickDishEditModal.foodIndex
+  if (!meal || index < 0) return
+
+  meal.foods.splice(index, 1)
+  savePlanDraft()
+  closeQuickDishEdit()
+}
 
 /* ─────────────────────────────────────────────────────────
    PDF
@@ -4120,5 +4215,22 @@ onMounted(async () => {
 .btn-danger:hover {
   background: #be123c;
   transform: translateY(-1px);
+}
+
+.edit-food-btn {
+  background: transparent;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  border-radius: 6px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.edit-food-btn:hover {
+  background: rgba(62, 155, 146, 0.12);
+  color: #3E9B92;
 }
 </style>
