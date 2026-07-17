@@ -2191,7 +2191,8 @@ function confirmAddQuickDish() {
     lipidsG: Number(totals.fat.toFixed(1)),
     source: 'custom',
     adjustedIngredients: quickDishIngredients.value.map((item) => {
-      return `${item.food.name} - ${item.quantityText} ${item.food.unit}`
+      const gramos = item.food.weightG * parseQuantityInput(item.quantityText)
+      return `${item.food.name} - ${item.quantityText} ${item.food.unit} (${gramos} g)`
     }),
       quickIngredients: quickDishIngredients.value.map((item) => ({
     food: item.food,
