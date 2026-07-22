@@ -362,7 +362,7 @@ async function handleSignOut() {
 .user-avatar-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 .user-info { overflow: hidden; flex: 1; }
-.user-name { font-size: .85rem; font-weight: 600; color: #1a1a2e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-name { font-size: .85rem; font-weight: 600; color: #1a1a2e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 0; }
 .user-role { font-size: .72rem; color: #9ca3af; margin-top: 1px; }
 
 .signout-btn {

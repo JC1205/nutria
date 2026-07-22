@@ -124,19 +124,22 @@
 
 <td class="td-portion">
   <input
-    v-if="food.portionMultiplier !== 1"
-    v-model.number="food.portionMultiplier"
-    type="number"
-    min="0.1"
-    step="0.1"
+    v-if="food.editingPortion"
+    v-model="food.portionText"
+    type="text"
+    inputmode="decimal"
     class="portion-input"
+    autofocus
     @click.stop
+    @input="updatePortionMultiplier(food)"
+    @blur="finishEditPortion(food)"
+    @keydown.enter.prevent="finishEditPortion(food)"
   />
 
   <button
     v-else
     class="portion-value"
-    @dblclick.stop="food.portionMultiplier = 0.5"
+    @dblclick.stop="startEditPortion(food)"
     title="Doble clic para ajustar porción"
   >
     {{ displayedQuantity(food) }}
@@ -260,10 +263,16 @@
                     <span v-if="fe.name" class="ferr">{{ fe.name }}</span>
                   </div>
                   <div class="ff">
-                    <label>Cantidad *</label>
-                    <input v-model.number="ff.quantity" type="number" step="0.1" min="0" placeholder="1" :class="{ err: fe.quantity }" />
-                    <span v-if="fe.quantity" class="ferr">{{ fe.quantity }}</span>
-                  </div>
+  <label>Cantidad *</label>
+  <input
+    v-model="ffQuantityText"
+    type="text"
+    inputmode="decimal"
+    placeholder="1 o 1/2"
+    :class="{ err: fe.quantity }"
+  />
+  <span v-if="fe.quantity" class="ferr">{{ fe.quantity }}</span>
+</div>
                   <div class="ff">
                     <label>Unidad *</label>
                     <select v-model="ff.unit">
@@ -424,7 +433,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch} from 'vue'
 import { useToastStore } from '@/stores/toast.store'
 import {
   Plus,
@@ -519,6 +528,8 @@ interface Food {
   glycemicLoad: number
 
   portionMultiplier: number
+  portionText: string
+  editingPortion: boolean
 }
 
 interface FoodGroup {
@@ -608,7 +619,37 @@ function mapFood(row: FoodRow): Food {
     glycemicLoad: Number(row.glycemic_load ?? 0),
 
     portionMultiplier: 1,
+    portionText: '1',
+    editingPortion: false,
   }
+}
+
+function parseQuantityInput(value: string) {
+  const cleanValue = value.trim().replace(',', '.')
+
+  if (!cleanValue) return 0
+
+  if (cleanValue.includes('/')) {
+    const [top, bottom] = cleanValue.split('/')
+    const numerator = Number(top)
+    const denominator = Number(bottom)
+
+    if (!numerator || !denominator) return 0
+
+    return numerator / denominator
+  }
+
+  const numberValue = Number(cleanValue)
+  return Number.isFinite(numberValue) ? numberValue : 0
+}
+
+function startEditPortion(food: Food) {
+  food.portionText = String(displayedQuantity(food)) // toma el valor actual mostrado
+  food.editingPortion = true
+}
+
+function finishEditPortion(food: Food) {
+  food.editingPortion = false
 }
 
 function mapFoodToPayload(foodGroupId: string) {
@@ -769,6 +810,21 @@ function displayedQuantity(food: Food) {
 
 function resetTemporaryPortion(food: Food) {
   food.portionMultiplier = 1
+  food.portionText = '1'
+  food.editingPortion = false
+}
+
+function updatePortionMultiplier(food: Food) {
+  const enteredQty = parseQuantityInput(food.portionText)
+
+  if (enteredQty > 0 && food.quantity > 0) {
+    food.portionMultiplier = enteredQty / food.quantity // ← el cambio clave
+  }
+}
+
+function setTemporaryPortion(food: Food, value: number) {
+  food.portionMultiplier = value
+  food.portionText = String(value)
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -814,6 +870,7 @@ const EMPTY_FF = () => ({
 })
 
 const ff = reactive(EMPTY_FF())
+const ffQuantityText = ref('1')
 
 const fe = reactive({
   name: '',
@@ -832,8 +889,10 @@ function openFoodModal(food?: Food) {
 
   if (food) {
     Object.assign(ff, { ...food })
+    ffQuantityText.value = String(food.quantity)
   } else {
     Object.assign(ff, EMPTY_FF())
+    ffQuantityText.value = '1'
   }
 
   foodModal.open = true
@@ -843,7 +902,9 @@ function validateFood() {
   let ok = true
 
   fe.name = ff.name.trim() ? '' : 'El nombre es requerido.'
-  fe.quantity = ff.quantity > 0 ? '' : 'Ingresa una cantidad.'
+  const parsedQty = parseQuantityInput(ffQuantityText.value)
+  ff.quantity = parsedQty
+  fe.quantity = ff.quantity > 0 ? '' : 'Ingresa una cantidad válida (ej. 1 o 1/2).'
   fe.weightG = ff.weightG > 0 ? '' : 'Ingresa el peso neto.'
 
   if (fe.name || fe.quantity || fe.weightG) {
@@ -1052,6 +1113,13 @@ async function doDeleteGroup() {
 
   toast.success('Grupo eliminado correctamente.')
 }
+
+watch(ffQuantityText, (text) => {
+  const parsed = parseQuantityInput(text)
+  if (parsed >= 0) {
+    ff.quantity = parsed
+  }
+})
 
 onMounted(async () => {
   await loadFoodGroups()
