@@ -983,53 +983,140 @@ function goToLogin() {
 .fade-enter-active, .fade-leave-active { transition: opacity .2s ease; }
 .fade-enter-from, .fade-leave-to       { opacity: 0; }
 
-/* ─── Responsive ───────────────────────────────────────────── */
-@media (max-width: 768px) {
-  .login-wrapper { flex-direction: column; }
-  .left-panel {
-    width: 100%;
-    min-height: 220px;
-    flex-shrink: 0;
-  }
-  .left-content { padding: 1.8rem 1.6rem; }
-  .floating-cards { flex-direction: row; align-self: auto; }
-  .tagline { font-size: .95rem; }
-  .right-panel { padding: 2rem 1.4rem; }
-  .form-title { font-size: 1.6rem; }
-}
+/* ── Responsive login ── */
 
-.left-panel::after {
-    content: '';
-    position: absolute;
+@media (max-width: 768px) {
+
+  .login-wrapper {
+    flex-direction: column;
+    min-height: 100vh;
+    background: #000;
+    position: relative;
+  }
+
+  /* Imagen fija, ocupa toda la pantalla */
+  .left-panel {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    min-height: unset;
+    flex-shrink: 0;
+    z-index: 0;
+  }
+
+  /* Imagen desenfocada */
+  .bg-image {
+    object-position: center center;
+    filter: blur(6px);
+    transform: scale(1.06);
+  }
+
+  /* Overlay */
+  .left-panel::after {
+    background: linear-gradient(
+      to bottom,
+      rgba(0,0,0,.30) 0%,
+      rgba(0,0,0,.20) 30%,
+      rgba(0,0,0,.60) 65%,
+      rgba(0,0,0,.80) 100%
+    );
+  }
+
+  /* Logo + tagline sobre la imagen */
+  .left-content {
+    position: fixed;
     inset: 0;
     z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 3rem 1.5rem 0;
     pointer-events: none;
-
-background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.45) 0%,
-    rgba(0, 0, 0, 0.25) 35%,
-    rgba(0, 0, 0, 0.05) 70%,
-    rgba(0, 0, 0, 0) 100%
-);
-}
-
-.register-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.field-input.no-icon {
-  padding-left: 14px;
-  padding-right: 14px;
-}
-
-@media (max-width: 520px) {
-  .register-grid {
-    grid-template-columns: 1fr;
-    gap: 0;
   }
+
+  .brand {
+    align-self: center;
+    margin-bottom: .6rem;
+  }
+  .brand-logo { width: 200px; }
+
+  .floating-cards { display: none; }
+
+  .tagline {
+    text-align: center;
+    font-size: .9rem;
+    font-weight: 300;
+    border-left: none;
+    padding-left: 0;
+    max-width: 340px;
+    margin-top: .4rem;
+  }
+
+  /* Panel derecho: centra la card en la mitad inferior */
+  .right-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    background: transparent;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: 45vh;
+  }
+
+  /* Card flotante centrada, sin pill */
+  .form-container {
+    width: 100%;
+    max-width: 450px;
+    max-height: 80vh;
+    overflow-y: auto;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 24px;
+    padding: 1.8rem 1.6rem 2rem;
+    box-shadow: 0 8px 48px rgba(0,0,0,.30);
+    transform: none;
+    opacity: 1;
+    transition: none;
+  }
+
+  /* Sin pill */
+  .form-container::before { display: none; }
+
+  /* Ocultar título "Bienvenido" */
+  .form-title { display: none; }
+
+  /* Subtítulo centrado */
+  .form-header {
+    margin-bottom: 2.4rem;
+    text-align: center;
+  }
+  .form-subtitle {
+    font-size: .9rem;
+    color: #090b0d;
+    font-weight: 600;
+    margin-top: 0;
+    text-align: center;
+  }
+
+  .field-input { padding: 15px 42px; font-size: .9rem; }
+  .field-group { margin-bottom: 1rem; }
+
+  .submit-btn { padding: 14px; }
+  .form-footer { margin-top: 1.2rem; margin-bottom: 60px;}
+}
+
+/* ── Móvil pequeño ── */
+@media (max-width: 480px) {
+  .right-panel    { padding: 1rem; padding-top: 42vh; }
+  .form-container { padding: 1.5rem 1.2rem 1.8rem; border-radius: 20px; }
+  .brand-logo     { width: 160px; }
+  .tagline        { font-size: .82rem; }
+  .register-grid  { grid-template-columns: 1fr; gap: 0; }
 }
 
 .fade-register-enter-active,
