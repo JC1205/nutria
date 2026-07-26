@@ -1251,19 +1251,28 @@ onMounted(async () => {
    MODAL
 ══════════════════════════════════════════════════════════ */
 .modal-overlay {
-  position: fixed; inset: 0;
+  position: fixed;
+  inset: 0;
   background: rgba(15,25,35,.45);
   backdrop-filter: blur(4px);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 1000; padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1.5rem;
+  overflow-y: auto;
 }
 
 .modal-card {
   background: #fff;
   border-radius: 20px;
-  width: 100%; max-width: 500px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
   box-shadow: 0 24px 60px rgba(0,0,0,.18);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-header {
@@ -1291,7 +1300,11 @@ onMounted(async () => {
 }
 .modal-close:hover { color: #374151; background: #f3f4f6; }
 
-.modal-body { padding: 1.4rem; }
+.modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
 
 /* Form */
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 1.4rem; }
@@ -1463,16 +1476,115 @@ onMounted(async () => {
 .modal-slide-leave-to     { transform: scale(.95); opacity: 0; }
 
 /* ── Responsive ───────────────────────────────────────────── */
+/* ── Responsive — reemplaza los bloques @media al final del style scoped ── */
+
+/* ── Tablet ───────────────────────────────────────────────── */
 @media (max-width: 960px) {
-  .main-layout { grid-template-columns: 1fr; }
-}
-@media (max-width: 600px) {
-  .appointments-page { padding: 1.2rem 1rem; }
-  .form-grid { grid-template-columns: 1fr; }
-  .status-selector { flex-direction: column; }
-  .upcoming-grid { grid-template-columns: 1fr; }
+  .appointments-page { padding: 1.6rem 1.4rem; }
+
+  /* Calendario y panel lateral se apilan */
+  .main-layout {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  /* Panel lateral no necesita altura mínima en tablet */
+  .day-panel { min-height: auto; }
+
+  /* Próximas citas: 2 columnas */
+  .upcoming-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Acciones de cita siempre visibles en touch */
+  .appt-actions { opacity: 1; }
 }
 
+/* ── Móvil ────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .appointments-page {
+    /* Espacio para el botón hamburguesa */
+    padding: 4rem 1rem 1.8rem;
+  }
+
+  /* Header: columna */
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .75rem;
+    margin-bottom: .9rem;
+  }
+
+  .btn-new {
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  /* Calendario: celdas más pequeñas */
+  .calendar-card { padding: 1.2rem 1rem; }
+
+  .cal-month { font-size: 1.1rem; }
+
+  .cal-cell { font-size: .82rem; border-radius: 9px; }
+
+  .cal-cell.selected .day-num {
+    padding: 3px 8px;
+    border-radius: 8px;
+  }
+
+  .cal-weekdays span { font-size: .62rem; }
+
+  .appt-dot { width: 4px; height: 4px; bottom: 3px; }
+
+  /* Panel lateral */
+  .day-panel { padding: 1.1rem; min-height: auto; }
+  .day-title { font-size: .92rem; }
+
+  /* Tarjetas de cita más compactas */
+  .appt-card { padding: 10px 12px; gap: 10px; }
+  .appt-time { font-size: .82rem; }
+  .appt-name { font-size: .84rem; }
+  .appt-reason { font-size: .72rem; }
+
+  /* Acciones siempre visibles en touch */
+  .appt-actions { opacity: 1; }
+
+  /* Próximas citas: 1 columna */
+  .upcoming-grid { grid-template-columns: 1fr; }
+  .upcoming-section { margin-top: 1rem; }
+
+  /* ── Modal corregido ── */
+
+
+  /* Modal de confirmación (delete) centrado */
+  .delete-modal {
+    border-radius: 20px;
+    margin: 1rem;
+    width: calc(100% - 2rem);
+    max-height: unset;
+  }
+
+  .form-grid { grid-template-columns: 1fr; }
+  .status-selector { flex-direction: column; }
+
+  .modal-footer { flex-direction: column-reverse; gap: 8px; }
+  .btn-secondary,
+  .btn-primary,
+  .btn-danger { width: 100%; justify-content: center; }
+}
+
+/* ── Móvil pequeño ────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .appointments-page { padding: 4.8rem .75rem 1.5rem; }
+
+
+  /* Calendario más compacto */
+  .calendar-card { padding: 1rem .75rem; }
+  .cal-grid { gap: 2px; }
+  .cal-cell { font-size: .76rem; }
+
+  /* Tiempo: una sola columna en móvil pequeño */
+  .time-manual-grid { grid-template-columns: 1fr; }
+}
 
 .time-manual-grid {
   display: grid;
@@ -1504,9 +1616,4 @@ onMounted(async () => {
 
 
 
-@media (max-width: 640px) {
-  .time-manual-grid {
-    grid-template-columns: 1fr 85px;
-  }
-}
 </style>
