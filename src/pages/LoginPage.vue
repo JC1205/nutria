@@ -1107,7 +1107,7 @@ function goToLogin() {
   .field-group { margin-bottom: 1rem; }
 
   .submit-btn { padding: 14px; }
-  .form-footer { margin-top: 1.2rem; margin-bottom: 60px;}
+  .form-footer { margin-top: 1.2rem; margin-bottom: 90px;}
 }
 
 /* ── Móvil pequeño ── */

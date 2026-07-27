@@ -421,6 +421,9 @@ async function handleSignOut() {
 
 @media (max-width: 767px) {
   .hamburger-btn { display: flex; }
+  .signout-btn{
+    background: #fff1f1; color: #ef4444;;
+  }
 }
 
 /* ══════════════════════════════════════════════════════════

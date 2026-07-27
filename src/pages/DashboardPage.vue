@@ -1293,7 +1293,7 @@ onMounted(async () => {
   }
 
   .welcome-name {
-    /* Si el nombre es largo se parte en línea propia */
+    font-weight: 600;
     display: inline;
   }
 

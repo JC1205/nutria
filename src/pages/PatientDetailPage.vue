@@ -2169,19 +2169,6 @@ onMounted(async () => {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Responsive ───────────────────────────────────────────── */
-@media (max-width: 1024px) {
-  .content-grid { grid-template-columns: 1fr; }
-  .col-side { position: static; }
-}
-@media (max-width: 640px) {
-  .patient-detail { padding: 1.2rem 1rem; }
-  .hero { flex-direction: column; align-items: flex-start; }
-  .info-grid, .lifestyle-grid { grid-template-columns: 1fr; }
-  .hero-name { font-size: 1.4rem; }
-  .tabs-bar { gap: 0; }
-  .tab-btn { padding: 10px 12px; font-size: .78rem; }
-}
 
 .modal-overlay {
   position: fixed;
@@ -2315,21 +2302,6 @@ onMounted(async () => {
   font-family: inherit;
 }
 
-@media (max-width: 600px) {
-  .modal-overlay {
-    align-items: flex-start;
-    padding: 0.75rem;
-  }
-
-  .modal-card {
-    max-width: 100%;
-    max-height: 95vh;
-  }
-
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
-}
 
 .documents-list {
   display: flex;
@@ -2422,19 +2394,6 @@ onMounted(async () => {
   text-align: center;
 }
 
-@media (max-width: 560px) {
-  .document-item {
-    align-items: flex-start;
-  }
-
-  .document-action {
-    display: none;
-  }
-
-  .document-info strong {
-    white-space: normal;
-  }
-}
 
 .card-head {
   display: flex;
@@ -2524,25 +2483,7 @@ onMounted(async () => {
   text-align: center;
 }
 
-@media (max-width: 560px) {
-  .card-head {
-    flex-direction: column;
-    align-items: stretch;
-  }
 
-  .card-head .btn-appt {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .meal-plan-item {
-    padding: 12px;
-  }
-
-  .meal-plan-info strong {
-    white-space: normal;
-  }
-}
 
 
 .meal-plan-item {
@@ -2824,33 +2765,7 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 
-@media (max-width: 760px) {
-  .plan-detail-summary {
-    grid-template-columns: 1fr 1fr;
-  }
-}
 
-@media (max-width: 560px) {
-  .plan-detail-summary {
-    grid-template-columns: 1fr;
-  }
-
-  .saved-plan-day-title {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .plan-detail-footer {
-    flex-direction: column;
-  }
-
-  .plan-detail-footer .btn-secondary,
-  .plan-detail-footer .btn-appt {
-    width: 100%;
-    justify-content: center;
-  }
-}
 
 .document-actions,
 .meal-plan-actions {
@@ -2879,18 +2794,7 @@ onMounted(async () => {
   transform: translateY(-1px);
 }
 
-@media (max-width: 560px) {
-  .document-actions,
-  .meal-plan-actions {
-    align-items: flex-end;
-    flex-direction: column;
-    gap: 6px;
-  }
 
-  .delete-mini-btn {
-    padding: 6px 10px;
-  }
-}
 
 .delete-modal {
   max-width: 380px;
@@ -2964,16 +2868,116 @@ onMounted(async () => {
   cursor: not-allowed;
 }
 
-@media (max-width: 480px) {
-  .delete-actions {
-    flex-direction: column;
+/* ── Responsive — reemplaza los bloques @media al final del style scoped ── */
+
+/* ── Tablet ───────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .content-grid { grid-template-columns: 1fr; }
+
+  .col-side {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: .9rem;
   }
 
-  .delete-actions .btn-secondary,
-  .delete-actions .btn-danger {
-    width: 100%;
-  }
+  .lifestyle-grid { grid-template-columns: 1fr 1fr; }
+
+  .meas-table { min-width: 700px; }
+  .tab-pane .card { overflow-x: auto; }
 }
 
+/* ── Móvil ────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .patient-detail { padding: 4.8rem 1rem 1.8rem; }
+
+  .back-btn { margin-bottom: .8rem; font-size: .82rem; }
+
+  /* Hero */
+  .hero {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .9rem;
+    margin-bottom: 1.1rem;
+  }
+
+  .hero-left  { gap: 12px; }
+  .hero-name  { font-size: 1.25rem; }
+  .hero-meta  { font-size: .82rem; gap: 6px; flex-wrap: wrap; }
+  .hero-avatar { width: 54px; height: 54px; font-size: 1.2rem; border-radius: 14px; }
+
+  /* Botones hero: 2 columnas */
+  .hero-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .btn-edit,
+  .btn-appt { justify-content: center; padding: 10px 12px; font-size: .82rem; }
+
+  /* Tabs: scroll horizontal sin scrollbar */
+  .tabs-bar {
+    gap: 0;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    margin-left: -1rem;
+    margin-right: -1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    box-sizing: content-box;
+  }
+  .tabs-bar::-webkit-scrollbar { display: none; }
+
+  .tab-btn { padding: 10px 14px; font-size: .78rem; flex-shrink: 0; white-space: nowrap; }
+
+  /* Grid y layouts */
+  .content-grid   { grid-template-columns: 1fr; }
+  .info-grid      { grid-template-columns: 1fr; gap: 12px; }
+  .lifestyle-grid { grid-template-columns: 1fr; }
+  .detail-grid    { grid-template-columns: 1fr; gap: 1rem; }
+
+  /* Métricas: 2 columnas */
+  .col-side {
+    position: static;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .75rem;
+  }
+  .metric-value { font-size: 1.65rem; }
+  .metric-card  { padding: 1rem; }
+  .progress-info { flex-wrap: wrap; gap: 6px; }
+
+  /* Tabla */
+  .meas-table { min-width: 600px; }
+
+  /* Items de tabs */
+  .appt-item  { flex-wrap: wrap; gap: 8px; }
+  .appt-badge { margin-left: 0; }
+  .plan-item  { flex-wrap: wrap; gap: 8px; }
+  .plan-badge { margin-left: 0; }
+  .doc-item   { flex-wrap: wrap; gap: 8px; }
+  .doc-download { margin-left: 0; width: 100%; text-align: center; justify-content: center; }
+  .supplement-item { flex-wrap: wrap; }
+  .condition-item  { flex-wrap: wrap; }
+  .cond-badge      { margin-left: 0; }
+
+  .card-header-row { flex-wrap: wrap; gap: 8px; }
+  .btn-appt.small  { width: 100%; justify-content: center; }
+}
+
+/* ── Móvil pequeño ────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .patient-detail { padding: 4.8rem .75rem 1.5rem; }
+
+  .hero-name   { font-size: 1.1rem; }
+  .hero-avatar { width: 46px; height: 46px; font-size: 1.05rem; border-radius: 12px; }
+
+  .hero-actions { grid-template-columns: 1fr; }
+  .col-side     { grid-template-columns: 1fr; }
+  .card         { padding: 1.1rem; }
+}
 
 </style>

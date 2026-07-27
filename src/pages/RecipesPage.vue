@@ -1446,14 +1446,178 @@ onMounted(async () => {
 }
 
 /* ── Responsive ───────────────────────────────────────────── */
+
+
+/* ── Tablet ───────────────────────────────────────────────── */
 @media (max-width: 900px) {
-  .detail-grid { grid-template-columns: 1fr; }
+  .recipes-page { padding: 1.6rem 1.4rem; }
+
+  /* Grid de recetas: 2 columnas */
+  .recipes-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+
+  /* Pills de categoría: scroll horizontal */
+  .category-pills {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .category-pills::-webkit-scrollbar { display: none; }
+
+  .pill { flex-shrink: 0; }
+
+  /* Acciones de card siempre visibles en touch */
+  .recipe-quick-actions { opacity: 1; }
+}
+
+/* ── Móvil ────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .recipes-page {
+    /* Espacio para el botón hamburguesa */
+    padding: 4rem 1rem 1.8rem;
+  }
+
+  /* Header: columna */
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .75rem;
+    margin-bottom: 1rem;
+  }
+
+  .btn-new {
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  /* Toolbar: búsqueda ancho completo, pills en fila con scroll */
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .search-box {
+    max-width: 100%;
+  }
+
+  /* Pills: contenedor con scroll, no se desborda */
+  .category-pills {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 6px;
+    /* Evita que el scroll afecte el ancho del padre */
+    width: 100%;
+    padding-bottom: 4px;
+    /* Permite que el contenido salga del padding del padre sin crear scroll en el body */
+    margin-left: -1rem;
+    margin-right: -1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    box-sizing: content-box;
+  }
+  .category-pills::-webkit-scrollbar { display: none; }
+
+  .pill {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  /* Grid de recetas: 1 columna */
+  .recipes-grid { grid-template-columns: 1fr; gap: .85rem; }
+
+  /* Altura de imagen de la card */
+  .recipe-image-wrap { height: 180px; }
+
+  /* Acciones siempre visibles en touch */
+  .recipe-quick-actions { opacity: 1; }
+
+  /* ── Modal detalle ── */
+  .detail-modal {
+    max-width: 100%;
+    width: 100%;
+    border-radius: 20px;
+    max-height: 92vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .detail-hero   { height: 200px; }
+  .detail-name   { font-size: 1.2rem; }
+  .detail-content { padding: 1.2rem; overflow-y: auto; flex: 1; }
+
+  /* Macros: igual de 3 columnas, solo más compacto */
+  .macro-val  { font-size: 1.1rem; }
+  .macro-lbl  { font-size: .7rem; }
+
+  /* Grid ingredientes / preparación: 1 columna */
+  .detail-grid { grid-template-columns: 1fr; gap: 1rem; }
+
+  .detail-footer { flex-direction: column-reverse; gap: 8px; }
+  .detail-footer .btn-secondary,
+  .detail-footer .btn-primary { width: 100%; justify-content: center; }
+
+  /* ── Modal formulario ── */
+  .form-modal {
+    max-width: 100%;
+    width: 100%;
+    border-radius: 20px;
+    max-height: 92vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .form-modal .modal-body {
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  /* Overlay centrado igual que otros módulos */
+  .modal-overlay {
+    padding: 1.5rem;
+    align-items: center;
+    overflow-y: auto;
+  }
+
+  /* Upload de imagen */
+  .image-upload { height: 120px; }
+
+  /* Form grid: 1 columna */
   .cols2 { grid-template-columns: 1fr; }
+
+  /* Tags */
+  .tag-suggestions { gap: 5px; }
+
+  /* Modal footer */
+  .modal-footer { flex-direction: column-reverse; gap: 8px; }
+  .btn-secondary,
+  .btn-primary,
+  .btn-danger { width: 100%; justify-content: center; }
+
+  /* Modal eliminar */
+  .delete-modal { max-width: 100%; width: 100%; }
 }
-@media (max-width: 600px) {
-  .recipes-page { padding: 1.2rem 1rem; }
-  .recipes-grid { grid-template-columns: 1fr; }
-  .toolbar { flex-direction: column; align-items: stretch; }
-  .search-box { max-width: 100%; }
+
+/* ── Móvil pequeño ────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .recipes-page { padding: 4.8rem .75rem 1.5rem; }
+
+  .recipe-image-wrap { height: 160px; }
+
+  .recipe-name { font-size: .95rem; }
+
+  .detail-hero { height: 170px; }
+
+  /* Emoji picker más compacto */
+  .emoji-picker { gap: 5px; }
+  .emoji-opt    { width: 32px; height: 32px; font-size: 1rem; }
 }
+
 </style>

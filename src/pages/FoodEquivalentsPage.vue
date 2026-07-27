@@ -1706,19 +1706,154 @@ onMounted(async () => {
 }
 
 /* ── Responsive ───────────────────────────────────────────── */
+
+/* ── Tablet ───────────────────────────────────────────────── */
 @media (max-width: 900px) {
-  .food-page { flex-direction: column; }
-  .groups-sidebar { width: 100%; flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid #f0f0f5; padding: .6rem; }
-  .groups-list { flex-direction: row; flex-wrap: wrap; }
-  .groups-header { width: 100%; }
-  .cols3 { grid-template-columns: 1fr 1fr; }
-}
-@media (max-width: 580px) {
-  .food-main { padding: 1rem; }
-  .food-header { flex-direction: column; align-items: flex-start; }
-  .food-header-right { width: 100%; }
-  .search-box { flex: 1; min-width: unset; }
-  .cols3 { grid-template-columns: 1fr; }
+  /* Sidebar de grupos + main se apilan */
+  .food-page        { flex-direction: column; }
+
+  .groups-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #f0f0f5;
+    padding: .8rem .8rem .6rem;
+    flex-direction: column;
+    gap: .4rem;
+  }
+
+  .groups-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .group-item {
+    flex-shrink: 0;
+    padding: 7px 12px;
+    border-radius: 20px;
+    border: 1.5px solid #f0f0f5;
+    font-size: .82rem;
+  }
+  .group-item.active { border-color: #3E9B92; }
+
+  .food-main { padding: 1.4rem 1.2rem; }
 }
 
+/* ── Móvil ────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .food-page { flex-direction: column; }
+
+  /* Sidebar de grupos */
+  .groups-sidebar {
+    width: 95%;
+    border-right: none;
+    border-bottom: 1px solid #f0f0f5;
+    /* padding-top para no chocar con el botón hamburguesa */
+    padding: 4.8rem .8rem .8rem;
+    flex-direction: column;
+  }
+
+  .groups-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .group-item {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1.5px solid #f0f0f5;
+    font-size: .8rem;
+  }
+  .group-item.active { border-color: #faf8f8; }
+
+  /* Área principal sin padding-top extra (ya lo tiene el sidebar) */
+  .food-main { padding: 1.2rem 1rem 1.8rem; }
+
+  /* Header del grupo: columna */
+  .food-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .9rem;
+  }
+
+  .food-header-left  { gap: 10px; }
+  .group-hero-icon   { width: 42px; height: 42px; font-size: 1.3rem; }
+  .food-title        { font-size: 1.4rem; }
+  .food-subtitle     { font-size: .8rem; }
+
+  /* Búsqueda + botón en la misma fila */
+  .food-header-right {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .search-box {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Botón agregar: no ocupa todo el ancho, solo lo necesario */
+  .btn-add-food {
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 9px 14px;
+    font-size: .82rem;
+  }
+
+  /* Tabla con scroll horizontal */
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Acciones siempre visibles en touch */
+  .row-acts { opacity: 1; }
+
+  /* Paginación */
+  .pagination { flex-wrap: wrap; justify-content: center; }
+
+  /* Modales */
+  .modal-overlay { padding: 1.5rem; align-items: center; overflow-y: auto; }
+
+  .modal-card,
+  .food-modal-card {
+    max-width: 100%;
+    width: 100%;
+    border-radius: 20px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .food-modal-card .modal-body {
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  /* Form grid del modal: 1 columna */
+  .cols3 { grid-template-columns: 1fr 1fr; }
+
+  /* Emoji picker se envuelve */
+  .emoji-picker { gap: 5px; }
+  .emoji-opt    { width: 32px; height: 32px; font-size: 1rem; }
+
+  /* Footer modal */
+  .modal-footer { flex-direction: column-reverse; gap: 8px; }
+  .btn-sec,
+  .btn-pri,
+  .btn-danger { width: 100%; justify-content: center; }
+}
+
+/* ── Móvil pequeño ────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .groups-sidebar { padding-top: 4.8rem; }
+  .food-main      { padding: 1rem .75rem 1.5rem; }
+
+  .food-title     { font-size: 1.2rem; }
+
+  /* Form grid del modal: 1 columna total */
+  .cols3 { grid-template-columns: 1fr; }
+}
 </style>
