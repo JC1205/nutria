@@ -1119,15 +1119,6 @@ onMounted(async () => {
 .fade-enter-active, .fade-leave-active { transition: opacity .15s; }
 .fade-enter-from,   .fade-leave-to     { opacity: 0; }
 
-/* ── Responsive ───────────────────────────────────────────── */
-@media (max-width: 900px) {
-  .td-size { display: none; }
-}
-@media (max-width: 640px) {
-  .documents-page { padding: 1.2rem 1rem; }
-  .page-header { flex-direction: column; align-items: stretch; gap: .8rem; }
-  .td-date { display: none; }
-}
 
 .page-error {
   margin-bottom: 1rem;
@@ -1138,5 +1129,140 @@ onMounted(async () => {
   border: 1px solid #fecaca;
   font-size: .85rem;
   font-weight: 700;
+}
+
+/* ── Responsive — reemplaza los bloques @media al final del style scoped ── */
+
+/* ── Tablet ───────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .documents-page { padding: 1.6rem 1.4rem; }
+
+  /* Ocultar tamaño en tablet */
+  .docs-table thead th:nth-child(5),
+  .doc-row td:nth-child(5) { display: none; }
+
+  /* Acciones siempre visibles en touch */
+  .row-actions { opacity: 1; }
+}
+
+/* ── Móvil ────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .documents-page { padding: 4.8rem 1rem 1.8rem; }
+
+  /* Header: columna */
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .75rem;
+    margin-bottom: 1rem;
+  }
+
+  .btn-upload {
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  /* Búsqueda: ancho completo */
+  .search-box { max-width: 100%; }
+
+  /* Tabla: ocultar fecha, tamaño y tipo — solo nombre, paciente y acciones */
+  .docs-table thead th:nth-child(3), /* tipo */
+  .docs-table thead th:nth-child(4), /* fecha */
+  .docs-table thead th:nth-child(5)  /* tamaño */
+  { display: none; }
+
+  .doc-row td:nth-child(3),
+  .doc-row td:nth-child(4),
+  .doc-row td:nth-child(5)
+  { display: none; }
+
+  /* Celdas más compactas */
+  .td { padding: 12px 10px; font-size: .83rem; }
+  .th { padding: 11px 10px; font-size: .65rem; }
+
+  /* Nombre de documento: limitar ancho */
+  .td-doc { max-width: 180px; }
+  .doc-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+    max-width: 160px;
+    font-size: .83rem;
+  }
+
+  /* Ícono doc más pequeño */
+  .doc-icon { width: 28px; height: 28px; border-radius: 8px; }
+
+  /* Avatar paciente más pequeño */
+  .patient-avatar { width: 22px; height: 22px; font-size: .62rem; }
+
+  /* Acciones siempre visibles */
+  .row-actions { opacity: 1; gap: 2px; }
+  .action-btn  { width: 26px; height: 26px; border-radius: 7px; }
+
+  /* ── Modales ── */
+  .modal-overlay {
+    padding: 1.5rem;
+    align-items: center;
+    overflow-y: auto;
+  }
+
+  .modal-card {
+    max-width: 100%;
+    width: 100%;
+    border-radius: 20px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Modal PDF preview */
+  .pdf-modal .pdf-preview-body { padding: 1rem; }
+  .pdf-mock-page { padding: 2rem 1rem; }
+
+  /* Modal upload */
+  .modal-card .modal-body { overflow-y: auto; flex: 1; }
+
+  .upload-drop { min-height: 90px; }
+
+  /* Botones en fila */
+  .modal-footer {
+    flex-direction: row;
+    gap: 8px;
+  }
+  .modal-footer .btn-secondary,
+  .modal-footer .btn-primary,
+  .modal-footer .btn-danger {
+    flex: 1;
+    justify-content: center;
+  }
+
+  /* Delete modal centrado */
+  .delete-modal {
+    max-width: 100%;
+    width: 100%;
+    padding: 1.5rem;
+  }
+  .delete-modal .modal-footer {
+    justify-content: center;
+    flex-direction: row;
+  }
+}
+
+/* ── Móvil pequeño ────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .documents-page { padding: 4.8rem .75rem 1.5rem; }
+
+  /* Ocultar también paciente — solo nombre y acciones */
+  .docs-table thead th:nth-child(2),
+  .doc-row td:nth-child(2) { display: none; }
+
+  .doc-name { max-width: 200px; }
+
+  /* Type badge más pequeño */
+  .type-badge { font-size: .68rem; padding: 3px 8px; }
 }
 </style>

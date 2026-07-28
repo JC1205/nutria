@@ -3147,20 +3147,6 @@ onMounted(async () => {
 .fade-enter-active, .fade-leave-active { transition: opacity .2s, transform .2s; }
 .fade-enter-from,   .fade-leave-to     { opacity: 0; transform: translateY(-6px); }
 
-/* ── Responsive ───────────────────────────────────────────── */
-@media (max-width: 1100px) {
-  .meal-plan-page { flex-direction: column; }
-  .summary-panel { width: 100%; position: static; }
-}
-@media (max-width: 600px) {
-  .meal-plan-page { padding: 1.2rem 1rem; }
-  .page-header { flex-direction: column; align-items: stretch; }
-  .header-actions { width: 100%; }
-  .btn-outline, .btn-save { flex: 1; justify-content: center; }
-  .selectors-bar { flex-direction: column; align-items: stretch; }
-  .select-wrapper select { width: 100%; min-width: unset; }
-}
-
 /* ══════════════════════════════════════════════════════════
    TABS ALIMENTOS / RECETAS
 ══════════════════════════════════════════════════════════ */
@@ -3632,29 +3618,6 @@ onMounted(async () => {
   padding-left: 36px;
 }
 
-/* Responsive detalle */
-@media (max-width: 760px) {
-  .plan-detail-patient {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .plan-detail-food {
-    flex-direction: column;
-  }
-
-  .detail-food-macros {
-    align-items: flex-start;
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-}
-
-@media (max-width: 480px) {
-  .plan-detail-patient {
-    grid-template-columns: 1fr;
-  }
-}
-
 /* ══════════════════════════════════════════════════════════
    FOOTER Y BOTONES DEL MODAL DETALLE
 ══════════════════════════════════════════════════════════ */
@@ -3721,18 +3684,7 @@ onMounted(async () => {
   box-shadow: none;
 }
 
-/* Responsive botones del modal */
-@media (max-width: 520px) {
-  .plan-detail-modal .modal-footer {
-    flex-direction: column;
-    align-items: stretch;
-  }
 
-  .plan-detail-modal .btn-secondary,
-  .plan-detail-modal .btn-save {
-    width: 100%;
-  }
-}
 
 .header-actions {
   display: flex;
@@ -4161,12 +4113,6 @@ onMounted(async () => {
   border: 1px solid #dcefed;
 }
 
-@media (max-width: 720px) {
-  .quick-food-results {
-    grid-template-columns: 1fr;
-  }
-}
-
 .confirm-clear-modal {
   max-width: 460px;
 }
@@ -4234,4 +4180,268 @@ onMounted(async () => {
   background: rgba(62, 155, 146, 0.12);
   color: #3E9B92;
 }
+
+/* ── Responsive — reemplaza los bloques @media al final del style scoped ── */
+
+/* ── Tablet ───────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .meal-plan-page {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.2rem;
+  }
+
+  .summary-panel {
+    width: 100%;
+    position: static;
+    display: flex;
+    flex-direction: column;
+    gap: .9rem;
+  }
+
+  /* Macros en fila horizontal en tablet */
+  .macro-row-tablet {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .9rem;
+  }
+
+  .day-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .day-tabs::-webkit-scrollbar { display: none; }
+  .day-tab { flex-shrink: 0; }
+}
+
+/* ── Móvil ────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .meal-plan-page {
+    padding: 4.8rem 1rem 1.8rem;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  /* ── Header ── */
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .75rem;
+    margin-bottom: .8rem;
+  }
+
+  .header-actions {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn-outline,
+  .btn-save {
+    flex: 1;
+    justify-content: center;
+    padding: 10px 8px;
+    font-size: .82rem;
+    white-space: nowrap;
+  }
+
+  /* ── Selectores ── */
+  .selectors-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .select-wrapper select { width: 100%; min-width: unset; }
+  .duration-toggle       { justify-content: flex-start; }
+
+  /* ── Day tabs ── */
+  .day-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    margin-left: -1rem;
+    margin-right: -1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    box-sizing: content-box;
+    padding-bottom: 4px;
+  }
+  .day-tabs::-webkit-scrollbar { display: none; }
+  .day-tab { flex-shrink: 0; min-width: 62px; }
+
+  /* ── Meal cards ── */
+  .meal-card { padding: 1rem; }
+
+  .meal-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .meal-name { font-size: .92rem; }
+  .meal-time { font-size: .72rem; }
+
+  .btn-add-food {
+    font-size: .8rem;
+    padding: 7px 12px;
+  }
+
+  .food-row { flex-wrap: wrap; gap: 6px; padding: 9px 10px; }
+
+  .food-macros {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-top: 2px;
+    border-top: 1px solid #f3f3f8;
+  }
+
+  /* ── Panel resumen ── */
+  .summary-panel {
+    width: 100%;
+    position: static;
+    display: flex;
+    flex-direction: column;
+    gap: .85rem;
+  }
+
+  .summary-title { font-size: 1rem; }
+
+  /* Calorías: ring más pequeño y horizontal */
+  .calories-card {
+    flex-direction: row;
+    align-items: center;
+    gap: 1.2rem;
+    padding: 1rem 1.2rem;
+  }
+  .calories-ring-wrap { width: 90px; height: 90px; flex-shrink: 0; }
+  .calories-value     { font-size: 1.4rem; }
+  .calories-label     { font-size: .68rem; }
+  .calories-target    { font-size: .78rem; margin-top: 0; }
+
+  /* ── Macros en UNA fila de 3 ── */
+  .summary-panel > .macro-card:nth-of-type(1),
+  .summary-panel > .macro-card:nth-of-type(2),
+  .summary-panel > .macro-card:nth-of-type(3) {
+    /* Las 3 macro cards se ponen en un grid automático */
+  }
+
+  /* Envolver las 3 macros en fila usando un wrapper si existe,
+     o forzar con un grid negativo */
+  .summary-panel {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: .85rem;
+  }
+
+  /* Las 3 tarjetas de macro van en una sola fila */
+  .macro-card.protein,
+  .macro-card.carbs,
+  .macro-card.fat {
+    /* Usamos order para agruparlas visualmente */
+  }
+
+  /* Contenedor ficticio: envuelve las 3 macros en fila */
+  .macros-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .6rem;
+    grid-column: 1 / -1;
+  }
+
+  /* Dentro de la fila de macros: texto más compacto */
+  .macros-row .macro-card {
+    padding: .85rem .9rem;
+  }
+
+  .macros-row .macro-name  { font-size: .72rem; gap: 4px; }
+  .macros-row .macro-amounts { font-size: .8rem; }
+  .macros-row .macro-target  { font-size: .68rem; }
+  .macros-row .macro-pct     { font-size: .68rem; }
+
+  /* By meal: compacto */
+  .by-meal-label { font-size: .65rem; margin-top: 0; }
+  .by-meal-item  { padding: 7px 9px; }
+  .bm-name       { font-size: .8rem; }
+  .bm-kcal       { font-size: .75rem; }
+  .bm-icon-box   { width: 24px; height: 24px; border-radius: 7px; }
+
+  /* ── Modal picker ── */
+  .modal-overlay {
+    padding: 1.5rem;
+    align-items: center;
+    overflow-y: auto;
+  }
+
+  .modal-card {
+    max-width: 100%;
+    width: 100%;
+    border-radius: 20px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .modal-card .modal-body {
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  /* Grupos del picker: scroll horizontal */
+  .picker-groups {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .picker-groups::-webkit-scrollbar { display: none; }
+  .pg-pill { flex-shrink: 0; }
+
+  .source-tab { font-size: .82rem; padding: 10px 12px; }
+
+  /* Quantity step */
+  .qs-row { grid-template-columns: 1fr 1fr; }
+
+  /* Ingredient qty */
+  .ingredient-qty-row { flex-wrap: wrap; gap: 6px; }
+  .iq-name { width: 100%; font-size: .82rem; }
+
+  /* ── Botones modal SIEMPRE en fila ── */
+  .modal-footer {
+    flex-direction: row;      /* fila horizontal */
+    gap: 8px;
+  }
+  .modal-footer .btn-secondary,
+  .modal-footer .btn-primary {
+    flex: 1;                  /* reparten el ancho */
+    justify-content: center;
+  }
+}
+
+/* ── Móvil pequeño ────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .meal-plan-page { padding: 4.8rem .75rem 1.5rem; }
+
+  /* Header acciones siguen en fila */
+  .header-actions { gap: 6px; }
+  .btn-outline, .btn-save { font-size: .78rem; padding: 9px 8px; }
+
+  /* Meal header en columna solo en muy pequeño */
+  .meal-header     { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .btn-add-food    { width: 100%; justify-content: center; }
+
+  .calories-ring-wrap { width: 80px; height: 80px; }
+  .calories-value     { font-size: 1.25rem; }
+
+  /* Macros: si no caben en 3 col, pasar a 1 col */
+  .macros-row { grid-template-columns: 1fr; }
+}
+
 </style>
