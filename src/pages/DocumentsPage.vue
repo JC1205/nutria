@@ -803,7 +803,7 @@ onMounted(async () => {
   margin-bottom: 1rem;
   animation: fadeDown .5s ease both;
 }
-.page-title    { font-size: 1.5rem; font-weight: 600; color: #0f1923; letter-spacing: -.5px; }
+.page-title    { font-size: 1.5rem; font-weight: 500; color: #0f1923; letter-spacing: -.5px; }
 .page-subtitle { font-size: .9rem; color: #9ca3af; margin-top: 4px; }
 
 .btn-upload {

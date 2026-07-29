@@ -1627,7 +1627,7 @@ watch(
 
 /* ── Móvil ────────────────────────────────────────────────── */
 @media (max-width: 767px) {
-  .patients-page { padding: 3.5rem 1rem 1.8rem; }
+  .patients-page { padding: 4rem 1rem 1.8rem; }
 
   /* Header en columna */
   .page-header {
