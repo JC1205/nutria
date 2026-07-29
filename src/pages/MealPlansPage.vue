@@ -4324,12 +4324,7 @@ onMounted(async () => {
   .calories-label     { font-size: .68rem; }
   .calories-target    { font-size: .78rem; margin-top: 0; }
 
-  /* ── Macros en UNA fila de 3 ── */
-  .summary-panel > .macro-card:nth-of-type(1),
-  .summary-panel > .macro-card:nth-of-type(2),
-  .summary-panel > .macro-card:nth-of-type(3) {
-    /* Las 3 macro cards se ponen en un grid automático */
-  }
+
 
   /* Envolver las 3 macros en fila usando un wrapper si existe,
      o forzar con un grid negativo */
@@ -4337,13 +4332,6 @@ onMounted(async () => {
     display: grid;
     grid-template-columns: 1fr;
     gap: .85rem;
-  }
-
-  /* Las 3 tarjetas de macro van en una sola fila */
-  .macro-card.protein,
-  .macro-card.carbs,
-  .macro-card.fat {
-    /* Usamos order para agruparlas visualmente */
   }
 
   /* Contenedor ficticio: envuelve las 3 macros en fila */

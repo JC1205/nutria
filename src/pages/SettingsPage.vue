@@ -799,11 +799,148 @@ onMounted(async () => {
 .modal-slide-leave-to     { transform: scale(.96); opacity: 0; }
 
 /* ── Responsive ───────────────────────────────────────────── */
-@media (max-width: 640px) {
-  .settings-page { padding: 1.2rem 1rem; }
+
+/* ── Tablet ───────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .settings-page {
+    max-width: 100%;
+    padding: 1.6rem 1.4rem;
+  }
+
+  .form-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ── Móvil ────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .settings-page {
+    max-width: 100%;
+    padding: 4.8rem 1rem 1.8rem;
+  }
+
+  /* Header */
+  .page-title    { font-size: 1.6rem; }
+  .page-subtitle { font-size: .85rem; }
+
+  /* Tabs: scroll horizontal sin scrollbar */
+  .tabs-bar {
+    gap: 0;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    margin-left: -1rem;
+    margin-right: -1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    box-sizing: content-box;
+    margin-bottom: 1.4rem;
+  }
+  .tabs-bar::-webkit-scrollbar { display: none; }
+
+  .tab-btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 10px 14px;
+    font-size: .8rem;
+  }
+
+  .tab-soon { display: none; }
+
+  /* Cards */
   .settings-card { padding: 1.2rem 1.1rem; }
-  .form-grid { grid-template-columns: 1fr; }
-  .avatar-section { flex-wrap: wrap; }
-  .danger-row { flex-direction: column; align-items: flex-start; }
+
+  /* Avatar section: columna */
+  .avatar-section {
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  .avatar-info { flex: 1; min-width: 0; }
+
+  .btn-change-photo {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Form grid: 1 columna */
+  .form-grid { grid-template-columns: 1fr; gap: 12px; }
+
+  /* Card footer: fila */
+  .card-footer {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .btn-save {
+    flex: 1;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  /* Danger zone */
+  .danger-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .75rem;
+  }
+
+  .btn-danger-outline {
+    width: 100%;
+    justify-content: center;
+    padding: 11px;
+  }
+
+  /* Coming soon */
+  .coming-soon { padding: 3rem 1rem; }
+
+  /* ── Modal eliminar cuenta ── */
+  .modal-overlay {
+    padding: 1.5rem;
+    align-items: center;
+    overflow-y: auto;
+  }
+
+  .modal-card {
+    max-width: 100%;
+    width: 100%;
+    border-radius: 20px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .modal-body { overflow-y: auto; flex: 1; }
+
+  /* Botones en fila */
+  .modal-footer {
+    flex-direction: row;
+    gap: 8px;
+  }
+  .modal-footer .btn-secondary,
+  .modal-footer .btn-danger {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+/* ── Móvil pequeño ────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .settings-page { padding: 4.8rem .75rem 1.5rem; }
+
+  .page-title { font-size: 1.4rem; }
+
+  .avatar-section { gap: 12px; }
+
+  .user-avatar,
+  .avatar-placeholder { width: 60px; height: 60px; border-radius: 14px; }
+
+  /* Card footer en móvil pequeño: saved msg y botón apilados */
+  .card-footer { flex-wrap: wrap; }
+  .saved-indicator { width: 100%; justify-content: center; }
+  .btn-save { padding: 11px; font-size: .85rem; }
+
+  .confirm-input { font-size: .85rem; padding: 9px 11px; }
 }
 </style>

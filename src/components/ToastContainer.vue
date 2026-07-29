@@ -208,20 +208,49 @@ const toastStore = useToastStore()
   to   { width: 0%;   }
 }
 
-/* ══════════════════════════════════════════════════════════
-   RESPONSIVE
-══════════════════════════════════════════════════════════ */
+/* ── Responsive — reemplaza el bloque @media al final del style scoped ── */
+
 @media (max-width: 560px) {
   .toast-container {
-    left: 14px;
-    right: 14px;
-    bottom: 14px;
+    /* Anclado a los bordes de la pantalla con margen seguro */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 0 .75rem .75rem;
+    align-items: stretch;
+    gap: 8px;
+    /* Asegura que no desborde */
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
   }
 
   .toast {
     min-width: unset;
-    max-width: none;
+    max-width: 100%;
     width: 100%;
+    border-radius: 16px;
+    padding: 11px 12px;
+    gap: 9px;
+    box-sizing: border-box;
   }
+
+  .toast-icon-wrap {
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+
+  .toast p { font-size: .82rem; }
+
+  .toast-close {
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+    flex-shrink: 0;
+  }
+
+  .toast-progress { border-radius: 0 0 16px 16px; }
 }
 </style>
