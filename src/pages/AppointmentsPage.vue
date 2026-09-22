@@ -145,19 +145,65 @@
                 <div class="form-grid">
 
                   <!-- Paciente -->
-                  <div class="form-field full">
-                    <label>Paciente</label>
-                    <div class="select-wrapper">
-                      <Users :size="15" class="field-ico" />
-                      <select v-model="form.patientId" :class="{ err: formErrors.patientId }">
-  <option value="" disabled>Selecciona un paciente</option>
-  <option v-for="p in patientList" :key="p.id" :value="p.id">
-    {{ p.full_name }}
-  </option>
-</select>
-                    </div>
-                    <span v-if="formErrors.patientId" class="field-err">{{ formErrors.patientId }}</span>
-                  </div>
+<div class="form-field full">
+  <label>Paciente</label>
+
+  <div class="select-wrapper">
+    <Users :size="15" class="field-ico" />
+
+    <select
+      v-model="form.patientId"
+      :class="{ err: formErrors.patientId }"
+    >
+      <option value="" disabled>Selecciona un paciente</option>
+
+      <option
+        v-for="p in patientList"
+        :key="p.id"
+        :value="p.id"
+      >
+        {{ p.full_name }}
+      </option>
+
+      <option value="new">+ Paciente nuevo (primera consulta)</option>
+    </select>
+  </div>
+
+  <span v-if="formErrors.patientId" class="field-err">
+    {{ formErrors.patientId }}
+  </span>
+
+  <div v-if="form.patientId === 'new'" class="new-patient-fields">
+    <div class="form-field">
+      <label>Nombre completo</label>
+
+      <input
+        v-model="form.newPatientName"
+        type="text"
+        placeholder="Nombre del paciente"
+        :class="{ err: formErrors.newPatientName }"
+      />
+
+      <span v-if="formErrors.newPatientName" class="field-err">
+        {{ formErrors.newPatientName }}
+      </span>
+    </div>
+
+    <div class="form-field">
+      <label>Teléfono (opcional)</label>
+
+      <input
+        v-model="form.newPatientPhone"
+        type="tel"
+        placeholder="Número de teléfono"
+      />
+    </div>
+
+    <p class="new-patient-hint">
+      El paciente se registrará sin medidas y podrás completar sus datos durante la primera consulta.
+    </p>
+  </div>
+</div>
 
                   <!-- Fecha -->
                   <div class="form-field">
@@ -610,6 +656,8 @@ const modal = reactive<{
 
 const form = reactive({
   patientId: '',
+  newPatientName: '',
+  newPatientPhone: '',
   date: '',
   time: '',
   reason: '',
@@ -619,6 +667,7 @@ const form = reactive({
 
 const formErrors = reactive({
   patientId: '',
+  newPatientName: '',
   date: '',
   time: '',
   reason: '',
@@ -688,6 +737,7 @@ function closeModal() {
 function clearErrors() {
   Object.assign(formErrors, {
     patientId: '',
+    newPatientName: '',
     date: '',
     time: '',
     reason: '',
@@ -703,6 +753,11 @@ function validate() {
     formErrors.patientId = 'Selecciona un paciente.'
     ok = false
   }
+
+  if (form.patientId === 'new' && !form.newPatientName.trim()) {
+  formErrors.newPatientName = 'Ingresa el nombre del paciente.'
+  ok = false
+}
 
   if (!form.date) {
     formErrors.date = 'La fecha es requerida.'
@@ -731,8 +786,6 @@ async function saveAppointment() {
 
   const user = await ensureUser()
 
-  if (!validate()) return
-
   if (!user) {
     pageError.value = 'No hay una sesión activa.'
     return
@@ -741,18 +794,41 @@ async function saveAppointment() {
   saving.value = true
   pageError.value = ''
 
-  const payload = {
-    user_id: user.id,
-    patient_id: form.patientId,
-    appointment_date: form.date,
-appointment_time: appointmentTime,
-    reason: form.notes.trim()
-      ? `${form.reason} - ${form.notes.trim()}`
-      : form.reason,
-    status: form.status,
-  }
-
   try {
+    let patientId = form.patientId
+
+    // 1. Crear paciente nuevo si se seleccionó esa opción
+    if (!modal.appt && form.patientId === 'new') {
+      const { data: newPatient, error: patientError } = await supabase
+        .from('patients')
+        .insert({
+          user_id: user.id,
+          full_name: form.newPatientName.trim(),
+          phone: form.newPatientPhone.trim() || null,
+          status: 'Active',
+          color: '#8E73A8',
+        })
+        .select('id')
+        .single()
+
+      if (patientError) throw patientError
+
+      patientId = newPatient.id
+    }
+
+    // 2. Preparar los datos de la cita
+    const payload = {
+      user_id: user.id,
+      patient_id: patientId,
+      appointment_date: form.date,
+      appointment_time: appointmentTime,
+      reason: form.notes.trim()
+        ? `${form.reason} - ${form.notes.trim()}`
+        : form.reason,
+      status: form.status,
+    }
+
+    // 3. Actualizar o crear la cita
     if (modal.appt) {
       const { error } = await supabase
         .from('appointments')
@@ -762,21 +838,32 @@ appointment_time: appointmentTime,
 
       if (error) throw error
     } else {
-      const { error } = await supabase.from('appointments').insert(payload)
+      const { error } = await supabase
+        .from('appointments')
+        .insert(payload)
 
       if (error) throw error
     }
 
-    const date = new Date(form.date + 'T12:00:00')
+    // 4. Actualizar el calendario
+    const date = new Date(`${form.date}T12:00:00`)
+
     viewYear.value = date.getFullYear()
     viewMonth.value = date.getMonth()
     selectedDate.value = form.date
 
     await loadAppointments()
+    await loadPatients()
+
     closeModal()
+
     toast.success('Cita agendada correctamente.')
   } catch (err) {
-    pageError.value = err instanceof Error ? err.message : 'No se pudo guardar la cita.'
+    pageError.value =
+      err instanceof Error
+        ? err.message
+        : 'No se pudo guardar la cita.'
+
     toast.error(pageError.value)
   } finally {
     saving.value = false
@@ -1614,6 +1701,135 @@ onMounted(async () => {
   appearance: none;
 }
 
+/* ========================================
+   CAMPOS DE PACIENTE NUEVO
+======================================== */
 
+.new-patient-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 14px;
+  padding: 18px;
+  border: 1px solid #dff0f0;
+  border-radius: 14px;
+  background: #f8fdfc;
+  animation: newPatientFadeIn 0.2s ease;
+}
 
+.new-patient-fields .form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.new-patient-fields label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #646464;
+}
+
+.new-patient-fields input {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid #d6e8e1;
+  border-radius: 9px;
+  outline: none;
+  background: #ffffff;
+  color: #374746;
+  font-family: inherit;
+  font-size: 14px;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+  box-sizing: border-box;
+}
+
+.new-patient-fields input::placeholder {
+  color: #b9b8bb;
+}
+
+.new-patient-fields input:focus {
+  border-color: #73a89a;
+  box-shadow: 0 0 0 3px rgba(115, 168, 152, 0.12);
+}
+
+/* Campo con error */
+
+.new-patient-fields input.err {
+  border-color: #d9536f;
+  background: #fff8f9;
+}
+
+.new-patient-fields .field-err {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: #d9536f;
+}
+
+/* Mensaje informativo */
+
+.new-patient-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 11px 12px;
+  border-radius: 9px;
+  background: #ebf7f5;
+  color: #838284;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.new-patient-hint::before {
+  content: "ⓘ";
+  flex-shrink: 0;
+  font-size: 14px;
+  color: #8e73a8;
+}
+
+/* Animación de aparición */
+
+@keyframes newPatientFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Diseño para pantallas pequeñas */
+
+@media (max-width: 600px) {
+  .new-patient-fields {
+    padding: 14px;
+    gap: 13px;
+    border-radius: 12px;
+  }
+
+  .new-patient-fields input {
+    min-height: 44px;
+    font-size: 16px;
+  }
+}
+
+/* Selector de paciente a lo ancho */
+.form-field.full select {
+  width: 100%;
+}
+
+/* Campos de paciente nuevo debajo del selector */
+.new-patient-fields {
+  grid-column: 1 / -1;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 0;
+}
 </style>
